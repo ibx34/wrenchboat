@@ -1,6 +1,6 @@
 ---
 name: Redundant code
-about: Describe this issue template's purpose here.
+about: If you found redundant or useless code report it here.
 title: I found redundant code
 labels: redundant code (not a worry)
 assignees: ''
