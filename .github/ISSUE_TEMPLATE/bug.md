@@ -1,5 +1,5 @@
 ---
-name: Redundant code
+name: BUG
 about: 'This is a serius issue, if you fake it I will hate you >:|. If you found a bug please report it.'
 title: [BUG]
 labels: BUG!!!!!!!!!
