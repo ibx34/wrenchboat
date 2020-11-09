@@ -7,13 +7,13 @@ assignees: ''
 
 ---
 
-# General 
+# General Section
 
 ### What causes the bug?
 
 ### Steps to reproduce
 
-# Advanced
+# Advanced Section
 **ONLY ANSWER IF YOU KNOW WHAT YOU ARE DOING**
 
 ### Do you know the code that might cause this?
@@ -22,7 +22,7 @@ assignees: ''
 ### Do you know how to fix this?
 *Please provide a link to a file in this rep aswell with a fix*
 
-# Information
+# Information Section
 
 ### What is your discord name? if any. (ex: ibx34#3400)
 

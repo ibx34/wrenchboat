@@ -7,6 +7,16 @@ assignees: ''
 
 ---
 
-# Explain the code 
+# General Section
 
-# Where is the code? (Provide a link to a file in this repo)
+### Explain the code 
+
+### Where is the code? (Provide a link to a file in this repo)
+
+# Information Section
+
+### What is your discord name? if any. (ex: ibx34#3400)
+
+### Are you part of our support server? (Yes or No)
+
+### Do you use Wrenchboat in your servers?
