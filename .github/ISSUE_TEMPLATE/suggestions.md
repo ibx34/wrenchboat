@@ -1,7 +1,7 @@
 ---
-name: Redundant code
-about: If you found redundant or useless code report it here.
-title: I found redundant code
+name: Suggestions
+about: Suggest something to be added to the bot!
+title: ["SUGGESTION"]
 labels: Suggestion
 assignees: ''
 
