@@ -1,0 +1,22 @@
+pat = [
+    "https://tenor.com/view/big-hero6-baymax-there-there-patting-head-pat-head-gif-4086973"
+    ""
+    ""
+    ""
+    ""
+    ""
+    ""
+    ""
+    ""
+    ""
+    ""
+    ""
+    ""
+    ""
+    ""
+    ""
+    ""
+    ""
+    # Keep one below ALWAYS in case you need to make more
+    ""
+]
