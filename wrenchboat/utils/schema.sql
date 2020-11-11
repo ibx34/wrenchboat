@@ -15,7 +15,7 @@ IF NOT EXISTS guilds
 CREATE TABLE
 IF NOT EXISTS infractions
 (
-    "id" SERIAL, --BIGINT
+    "id" BIGINT, --SERIAL
     "type" VARCHAR,
     "target" BIGINT,
     "moderator" BIGINT,
@@ -23,4 +23,24 @@ IF NOT EXISTS infractions
     "time_punsihed" TIMESTAMP,
     "guild" BIGINT,
     "modlogs" BIGINT
+);
+
+CREATE TABLE 
+IF NOT EXISTS tags
+(
+    "id" SERIAL,
+    "name" VARCHAR,
+    "content" VARCHAR,
+    "author" BIGINT,
+    "guild" BIGINT,
+    "created" TIMESTAMP,
+    "uses" BIGINT DEFAULT 0
+);
+
+CREATE TABLE 
+IF NOT EXISTS user_backups
+(
+    "id" SERIAL,
+    "target" BIGINT,
+    "roles" BIGINT[] DEFAULT '{}'
 )
