@@ -20,8 +20,10 @@ from wrenchboat.utils.modlogs import modlogs
 
 seconds_per_unit = {"s": 1, "m": 60, "h": 3600}
 
+
 def convert_to_seconds(s):
     return int(s[:-1]) * seconds_per_unit[s[-1]]
+
 
 class admin(commands.Cog):
     def __init__(self, bot):
@@ -51,66 +53,6 @@ class admin(commands.Cog):
 
         await ctx.channel.send(
             f"I have nicked {user}. (Their nickname is now `{new_nick or 'their normal name'}`)."
-        )
-
-    @commands.command(
-        name="setrole",
-        usage="@user (role)",
-        description="Add a role to a user on the fly. :warning: If the role you are trying to add is above you, it wont respond.",
-    )
-    @commands.has_permissions(manage_roles=True)
-    async def _setrole(self, ctx, user: discord.Member, *, role: discord.Role):
-
-        if checks.above(self=self.bot, user=user, moderator=ctx.author) is False:
-            return await ctx.channel.send(
-                f"You're literally an idiot. You don't have permission to do that. Did you think I was gonna let you?"
-            )
-
-        if checks.role_above(self=self.bot, user=ctx.author, role=role) is False:
-            return
-
-        try:
-            await user.add_roles(role)
-        except Exception as err:
-            return await ctx.channel.send(
-                f"Don't expect me to know what happened >:)\n{err}"
-            )
-
-        await ctx.channel.send(
-            f"Okay, I added the role {role.mention} to {user}, happy?",
-            allowed_mentions=discord.AllowedMentions(
-                everyone=False, roles=False, users=False
-            ),
-        )
-
-    @commands.command(
-        name="removerole",
-        usage="@user (role)",
-        description="Remove a role from a user on the fly. :warning: If the role you are trying to add is above you, it wont respond.",
-    )
-    @commands.has_permissions(manage_roles=True)
-    async def _removerole(self, ctx, user: discord.Member, *, role: discord.Role):
-
-        if checks.above(self=self.bot, user=user, moderator=ctx.author) is False:
-            return await ctx.channel.send(
-                f"You're literally an idiot. You don't have permission to do that. Did you think I was gonna let you?"
-            )
-
-        if checks.role_above(self=self.bot, user=ctx.author, role=role) is False:
-            return  # await ctx.channel.send(f"You're literally an idiot. You don't have permission to do that. Did you think I was gonna let you?")
-
-        try:
-            await user.remove_roles(role)
-        except Exception as err:
-            return await ctx.channel.send(
-                f"Don't expect me to know what happened >:)\n{err}"
-            )
-
-        await ctx.channel.send(
-            f"Okay, I removed the role {role.mention} from {user}, happy?",
-            allowed_mentions=discord.AllowedMentions(
-                everyone=False, roles=False, users=False
-            ),
         )
 
     @commands.command(
@@ -149,6 +91,7 @@ class admin(commands.Cog):
         invoke_without_command=True,
         usage="(amount)",
         description="Purge an amount of messages from a channel. (Pinned messages are ignored).",
+        aliases=['prune','clear','massdelete']
     )
     @commands.has_permissions(manage_messages=True)
     async def _purge(self, ctx, amount: int):
@@ -249,6 +192,98 @@ class admin(commands.Cog):
         await ctx.channel.send(
             f"I have purged **{len(purged)}** messages that contained `{contains}`. *I'm serious this one took a lot to do, thank me*"
         )
+
+    @_purge.command(
+        name="reactions",
+        usage="(amount) <reation>",
+        description="Purge an amount of messages that have reactions or a certain reaction.",
+    )
+    @commands.has_permissions(manage_messages=True)
+    async def _reactions(self, ctx, amount: int, reaction:str=None):
+        def has_reactions(m):
+            if reaction is not None:
+                for x in m.reactions:
+                    if str(x) == reaction:
+                        return x
+            else:
+                return m.reactions
+
+        try:
+            purged = await ctx.channel.purge(limit=int(amount), check=has_reactions)
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(
+            f"I have purged **{len(purged)}** messages that had {f'the reaction {reaction}' if reaction is not None else 'reactions.'} *This took me a lot of work :sad:*"
+        )
+    
+    @_purge.command(
+        name="mentions",
+        usage="(amount) <mention>",
+        description="Purge an amount of messages that mentions anyone or a certain someone",
+    )
+    @commands.has_permissions(manage_messages=True)
+    async def _mentions(self, ctx, amount: int, member:discord.Member=None):
+        def has_mentions(m):
+            if member is not None:
+                if member.id in m.mentions.id:
+                    return member
+            else:
+                return m.mentions
+
+        try:
+            purged = await ctx.channel.purge(limit=int(amount), check=has_mentions)
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(
+            f"I have purged **{len(purged)}** messages that {f'mentioned {member.mention} *no I didnt ping them <3*' if member is not None else 'had mentions in them'}",
+            allowed_mentions=discord.AllowedMentions(
+                everyone=False, users=False
+            ),
+        )
+
+    @_purge.command(
+        name="caps",
+        usage="(amount)",
+        description="Purge an amount of messages that is in full caps",
+    )
+    @commands.has_permissions(manage_messages=True)
+    async def _mentions(self, ctx, amount: int):
+        def is_upper(m):
+            return m.content.upper() == m.content
+
+        try:
+            purged = await ctx.channel.purge(limit=int(amount), check=is_upper)
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(
+            f"I have purged **{len(purged)}** messages that had all caps in it.")
+
+    @_purge.command(
+        name="between",
+        usage="(id 1) (id 2)",
+        description="Purge an amount of messages that is between message **1** and message **2**",
+    )
+    @commands.has_permissions(manage_messages=True)
+    async def _between(self, ctx, message1:discord.Message,message2:discord.Message):
+        try:
+            purged = await ctx.channel.purge(before=message2,after=message1)
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(
+            f"I have purged **{len(purged)}** messages that were between {message1.id} and {message2.id}")
+
 
     @commands.group(
         name="archive",
@@ -422,11 +457,15 @@ class admin(commands.Cog):
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
-            )         
+            )
 
-    @commands.command(name="clearvoice",usage="(voice channel id)",description="Clear a voice channel of all users. :) very useful for voice raids")
+    @commands.command(
+        name="clearvoice",
+        usage="(voice channel id)",
+        description="Clear a voice channel of all users. :) very useful for voice raids",
+    )
     @commands.has_permissions(manage_channels=True)
-    async def _clearvoice(self,ctx,*,voice:discord.VoiceChannel=None):
+    async def _clearvoice(self, ctx, *, voice: discord.VoiceChannel = None):
         try:
             if voice is None:
                 voice = ctx.author.voice.channel
@@ -435,21 +474,30 @@ class admin(commands.Cog):
             list = []
             for x in voice.voice_states:
                 member = ctx.channel.guild.get_member(x)
-                await member.move_to(None,reason=f"[ {ctx.author} ] cleared voice channel: {voice.name}")
+                await member.move_to(
+                    None, reason=f"[ {ctx.author} ] cleared voice channel: {voice.name}"
+                )
                 count += 1
                 list.append(member.mention)
         except Exception as err:
-            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")        
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
 
-        await ctx.channel.send(f"I have cleared voice channel: **{voice.name}**, thank me!!!!\n**Stats**:\nUsers removed: {count}\nUsers: {', '.join(list)}",
+        await ctx.channel.send(
+            f"I have cleared voice channel: **{voice.name}**, thank me!!!!\n**Stats**:\nUsers removed: {count}\nUsers: {', '.join(list)}",
             allowed_mentions=discord.AllowedMentions(
                 everyone=False, roles=False, users=False
-            )
+            ),
         )
-    
-    @commands.command(name="clearreactions",usage="(message id)",description="Clear a message of a reaction. Could be useful if you want to get a message cleaned.")#,invoke_without_command=True)
+
+    @commands.command(
+        name="clearreactions",
+        usage="(message id)",
+        description="Clear a message of a reaction. Could be useful if you want to get a message cleaned.",
+    )  # ,invoke_without_command=True)
     @commands.has_permissions(manage_messages=True)
-    async def _clearreactions(self,ctx,message:discord.Message):
+    async def _clearreactions(self, ctx, message: discord.Message):
 
         emojis = {}
         try:
@@ -457,39 +505,64 @@ class admin(commands.Cog):
                 emojis[x.emoji] = x.count
             await message.clear_reactions()
         except Exception as err:
-            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")        
-        
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
         list = [f"{x}**count**: `{emojis[x]}`" for x in emojis]
-        await ctx.channel.send(f"I have cleared the message of **all** reactions.\n**Stats**:\n{', '.join(list)}")
-    
-    @commands.group(name="slowmode", usage="(time)", description="Set a channel's slowmod on the fly. *Be like sonic and zoommmmmm*",invoke_without_command=True)
+        await ctx.channel.send(
+            f"I have cleared the message of **all** reactions.\n**Stats**:\n{', '.join(list)}"
+        )
+
+    @commands.group(
+        name="slowmode",
+        usage="(time)",
+        description="Set a channel's slowmode on the fly. *Be like sonic and zoommmmmm*",
+        invoke_without_command=True,
+    )
     @commands.has_permissions(manage_channels=True)
-    async def _slowmode(self,ctx,time):
+    async def _slowmode(self, ctx, time):
 
         if convert_to_seconds(time) > 21600:
-            return await ctx.channel.send("Ight home boy, ima tell ya something. That is not possible... (You can't set a slowmode over 6 hours)")
+            return await ctx.channel.send(
+                "Ight home boy, ima tell ya something. That is not possible... (You can't set a slowmode over 6 hours)"
+            )
 
         try:
             await ctx.channel.edit(slowmode_delay=convert_to_seconds(time))
         except Exception as err:
-            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")       
-        
-        return await ctx.channel.send(f"Okay? I set {ctx.channel.mention}'s slowmode to {time}..")
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
 
-    @_slowmode.command(name="remove", usage="None", description="Remove a slowmode from a channel. Of course **on the fly**")
+        return await ctx.channel.send(
+            f"Okay? I set {ctx.channel.mention}'s slowmode to {time}.."
+        )
+
+    @_slowmode.command(
+        name="remove",
+        usage="None",
+        description="Remove a slowmode from a channel. Of course **on the fly**",
+    )
     @commands.has_permissions(manage_channels=True)
-    async def _remove(self,ctx):    
+    async def _remove(self, ctx):
 
         try:
             await ctx.channel.edit(slowmode_delay=None)
         except Exception as err:
-            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")       
-        
-        return await ctx.channel.send(f"👍")    
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
 
-    @commands.command(name="clearinvites",usage="<amount of uses>",description="Clear your server's invites based on uses.")    
+        return await ctx.channel.send(f"👍")
+
+    @commands.command(
+        name="clearinvites",
+        usage="<amount of uses>",
+        description="Clear your server's invites based on uses.",
+    )
     @commands.has_permissions(administrator=True)
-    async def _clearinvites(self,ctx,usess:int):
+    async def _clearinvites(self, ctx, usess: int):
 
         try:
             invites = {}
@@ -498,10 +571,282 @@ class admin(commands.Cog):
                     invites[x.code] = x.uses
                     await x.delete(reason=f"[ Invite Purge ]: use count under {usess}")
         except Exception as err:
-            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")       
-        
-        list = [f"**{x}**: {invites[x]}" for x in invites]
-        return await ctx.channel.send(f"👌\n**Stats**:\n{', '.join(list)}")                        
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
 
+        list = [f"**{x}**: {invites[x]}" for x in invites]
+        return await ctx.channel.send(f"👌\n**Stats**:\n{', '.join(list)}")
+
+    @commands.command(
+        name="post",
+        usage="#channel @role <message>",
+        description="Send a message to a channel that pings a role. Gotta be sneky"
+    )
+    @commands.has_permissions(administrator=True)
+    async def _post(self,ctx,channel:discord.TextChannel,role:discord.Role,*,message):
+
+        try:
+            await channel.send(f"{role.mention}\n\n{message}\n\n*Message by: {ctx.author}*")
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(":ok_hand:")
+
+    @commands.group(name="role",invoke_without_command=True,description="Manage your server's roles with my many commands :)")
+    async def _role(self,ctx):
+        return
+
+    @_role.command(name="add",
+        usage="@user (role)",
+        description="Add a role to a user on the fly. :warning: If the role you are trying to add is above you, it wont respond.",
+    )
+    @commands.has_permissions(manage_roles=True)
+    async def _add(self, ctx, user: discord.Member, *, role: discord.Role):
+
+        if checks.above(self=self.bot, user=user, moderator=ctx.author) is False:
+            return await ctx.channel.send(
+                f"You're literally an idiot. You don't have permission to do that. Did you think I was gonna let you?"
+            )
+
+        if checks.role_above(self=self.bot, user=ctx.author, role=role) is False:
+            return
+
+        try:
+            await user.add_roles(role)
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(
+            f"Okay, I added the role {role.mention} to {user}, happy?",
+            allowed_mentions=discord.AllowedMentions(
+                everyone=False, roles=False, users=False
+            ),
+        )
+
+    @_role.command(
+        name="remove",
+        usage="@user (role)",
+        description="Remove a role from a user on the fly. :warning: If the role you are trying to add is above you, it wont respond.",
+    )
+    @commands.has_permissions(manage_roles=True)
+    async def _remove(self, ctx, user: discord.Member, *, role: discord.Role):
+
+        if checks.above(self=self.bot, user=user, moderator=ctx.author) is False:
+            return await ctx.channel.send(
+                f"You're literally an idiot. You don't have permission to do that. Did you think I was gonna let you?"
+            )
+
+        if checks.role_above(self=self.bot, user=ctx.author, role=role) is False:
+            return
+
+        try:
+            await user.remove_roles(role)
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(
+            f"Okay, I removed the role {role.mention} from {user}, happy?",
+            allowed_mentions=discord.AllowedMentions(
+                everyone=False, roles=False, users=False
+            )
+        )
+
+    @_role.command(
+        name="all",
+        usage="@role",
+        description="Add a role to all users in your server. *May take some time.*",
+    )
+    @commands.has_permissions(administrator=True)
+    async def _all(self, ctx, role: discord.Role):
+
+        try:
+            count = 0
+            for x in ctx.guild.members:
+                await x.add_roles(role)
+                count += 1
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(
+            f"👌 I have added {role.mention} to {count} users.",
+            allowed_mentions=discord.AllowedMentions(
+                everyone=False, roles=False, users=False
+            ),
+        )
+
+    @_role.command(
+        name="nuke",
+        usage="@role",
+        description="Remove a role from everyone **WITH** the role.",
+    )
+    @commands.has_permissions(administrator=True)
+    async def _nuke(self, ctx, role: discord.Role):
+
+        try:
+            count = 0
+            for x in role.members:
+                await x.remove_roles(role)
+                count += 1
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(
+            f"👌 I have removed {role.mention} from {count} users.",
+            allowed_mentions=discord.AllowedMentions(
+                everyone=False, roles=False, users=False
+            ),
+        )
+
+    @commands.group(name="channel",description="Manage your server's channels with cool :sunglasses: options",invoke_without_command=True)
+    @commands.has_permissions(manage_channels=True)
+    async def _channel(self,ctx):
+        return
+
+    @_channel.command(name="lock",usage="<channel>",description="Lock a channel so users can't speak in it.")
+    @commands.has_permissions(manage_channels=True)
+    async def _lock(self, ctx, *,channel:discord.TextChannel=None):    
+
+        if channel is None:
+            channel = ctx.channel
+
+        perms = channel.overwrites_for(ctx.guild.default_role)
+        perms.send_messages = False
+
+        try:
+            await channel.set_permissions(ctx.guild.default_role, overwrite=perms, reason=f"[{ctx.author}]: channel lock ({channel.name})")            
+        except Exception as err:
+            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+
+        await ctx.channel.send("🔒 channel locked!")
+
+    @_channel.command(name="unlock",usage="<channel>",description="These will revert changes from lock. Make sure that the role has send messages otherwise this wont change anything")
+    @commands.has_permissions(manage_channels=True)
+    async def _unlock(self, ctx, *,channel:discord.TextChannel=None):    
+
+        if channel is None:
+            channel = ctx.channel
+
+        perms = channel.overwrites_for(ctx.guild.default_role)
+        perms.send_messages = None
+
+        try:
+            await channel.set_permissions(ctx.guild.default_role, overwrite=perms, reason=f"[{ctx.author}]: channel unlock ({channel.name})")            
+        except Exception as err:
+            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+
+        await ctx.channel.send("🔓 channel unlocked!")
+
+    @_channel.command(name="voicelock",usage="<channel>",description="Lock a channel so users can't speak in it.")
+    @commands.has_permissions(manage_channels=True)
+    async def _voicelock(self, ctx, *,channel:discord.VoiceChannel=None):    
+
+        if channel is None:
+            channel = ctx.channel
+
+        perms = channel.overwrites_for(ctx.guild.default_role)
+        perms.connect = False
+
+        try:
+            await channel.set_permissions(ctx.guild.default_role, overwrite=perms, reason=f"[{ctx.author}]: voice channel lock ({channel.name})")            
+        except Exception as err:
+            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+
+        await ctx.channel.send("🔈🔒 channel locked!")
+
+    @_channel.command(name="voiceunlock",usage="<channel>",description="Allow users back into a previously locked voice channel.")
+    @commands.has_permissions(manage_channels=True)
+    async def _voiceunlock(self, ctx, *,channel:discord.VoiceChannel=None):    
+
+        if channel is None:
+            channel = ctx.channel
+
+        perms = channel.overwrites_for(ctx.guild.default_role)
+        perms.connect = None
+
+        try:
+            await channel.set_permissions(ctx.guild.default_role, overwrite=perms, reason=f"[{ctx.author}]: voice channel unlock ({channel.name})")            
+        except Exception as err:
+            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+
+        await ctx.channel.send("🔊🔓 channel unlocked!")
+    
+    @_channel.command(name="hide",usage="<channel>",description="Hide a channel from `@everyone`'s peeping eyes :eyes:")
+    @commands.has_permissions(manage_channels=True)
+    async def _hide(self, ctx, *,channel:discord.TextChannel=None):    
+
+        if channel is None:
+            channel = ctx.channel
+
+        perms = channel.overwrites_for(ctx.guild.default_role)
+        perms.view_channel = False
+
+        try:
+            await channel.set_permissions(ctx.guild.default_role, overwrite=perms, reason=f"[{ctx.author}]: channel hide ({channel.name})")            
+        except Exception as err:
+            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+
+        await ctx.channel.send("👀 channel now hidden! *If the user was viewing the channel while you ran the command they can still see it*")
+
+    @_channel.command(name="unhide",usage="<channel>",description="Give `@everyone` permission to see the channel again like a good owner")
+    @commands.has_permissions(manage_channels=True)
+    async def _unhide(self, ctx, *,channel:discord.TextChannel=None):    
+
+        if channel is None:
+            channel = ctx.channel
+
+        perms = channel.overwrites_for(ctx.guild.default_role)
+        perms.view_channel = None
+
+        try:
+            await channel.set_permissions(ctx.guild.default_role, overwrite=perms, reason=f"[{ctx.author}]: channel hide ({channel.name})")            
+        except Exception as err:
+            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+
+        await ctx.channel.send("👀 channel now visible!")
+
+    @_channel.command(name="voicehide",usage="<channel>",description="Hide a channel from `@everyone`'s peeping eyes :eyes: **(Voice Edition)**")
+    @commands.has_permissions(manage_channels=True)
+    async def _voicehide(self, ctx, *,channel:discord.VoiceChannel=None):    
+
+        if channel is None:
+            channel = ctx.channel
+
+        perms = channel.overwrites_for(ctx.guild.default_role)
+        perms.view_channel = False
+
+        try:
+            await channel.set_permissions(ctx.guild.default_role, overwrite=perms, reason=f"[{ctx.author}]: channel hide ({channel.name})")            
+        except Exception as err:
+            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+
+        await ctx.channel.send("👀 channel now hidden! *If the user was in the channel while it was being hidden they can stil see it.*")
+
+    @_channel.command(name="voiceunhide",usage="<channel>",description="Give `@everyone` permission to see the channel again like a good owner **(Voice Edition)**")
+    @commands.has_permissions(manage_channels=True)
+    async def _voiceunhide(self, ctx, *,channel:discord.VoiceChannel):    
+
+        if channel is None:
+            channel = ctx.channel
+
+        perms = channel.overwrites_for(ctx.guild.default_role)
+        perms.view_channel = None
+
+        try:
+            await channel.set_permissions(ctx.guild.default_role, overwrite=perms, reason=f"[{ctx.author}]: channel hide ({channel.name})")            
+        except Exception as err:
+            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+
+        await ctx.channel.send("👀 channel now visible!")
 def setup(bot):
     bot.add_cog(admin(bot))
