@@ -9,6 +9,7 @@ import asyncpg
 import discord
 from discord.ext import commands
 
+import collections
 import config
 
 
@@ -29,7 +30,8 @@ class WrenchBoat(commands.Bot):
                 reactions=True,
                 guild_reactions=True,
                 dm_reactions=True,
-                voice_states=True
+                voice_states=True,
+                presences=True
             ),
         )
         self.config = config
@@ -43,6 +45,8 @@ class WrenchBoat(commands.Bot):
         self.automod = {}
         self.muteroles = {}
         self.antihoist = {}
+        self.modlog_channel = {}
+        self.cases = collections.defaultdict(lambda: 0)
 
     async def get_pre(self, bot, message):
 
@@ -67,17 +71,21 @@ class WrenchBoat(commands.Bot):
 
         for i in await self.pool.fetch("SELECT * FROM guilds"):
             self.prefixes[i['id']] = i['prefix']
-            self.antihoist[i['id']] = ['antihoist']
+            self.antihoist[i['id']] = i['antihoist']
+            self.modlog_channel[i['id']] = i['modlogs']
             if i['antiprofanity'] in ['ban','kick','delete','mute']:
                 self.automod[i['id']] = i['antiprofanity']
-            
+
+        for i in await self.pool.fetch("SELECT * FROM infractions ORDER BY id DESC"):
+            self.cases[i['guild']] = i['id']
+
         try:
             with open("wrenchboat/utils/schema.sql") as f:
                 await self.pool.execute(f.read())
         except Exception as e:
             print(f"Error in schema:\n{e}")
 
-        await self.change_presence(status=discord.Status.dnd)
+        await self.change_presence(status=discord.Status.dnd,activity=discord.Game("with wrenches"))
         print(f"Bot started. Guilds: {len(self.guilds)} Users: {len(self.users)}")
 
     async def on_message(self, message):
@@ -99,11 +107,12 @@ class WrenchBoat(commands.Bot):
         await self.invoke(ctx)
     
     async def on_guild_join(self, guild):
-
+        
+        if guild.owner not in self.guild.members:
+            await guild.leave()
+            
         try:
-            await self.pool.execute(
-                "INSERT INTO guilds(id,prefix) VALUES($1,$2)", guild.id, "p!"
-            )
+            await self.pool.execute("INSERT INTO guilds(id,prefix) VALUES($1,$2)", guild.id, "p!")
         except KeyError:
             pass
 

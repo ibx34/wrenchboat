@@ -13,9 +13,9 @@ from discord.ext import commands
 import traceback
 
 modlogs_messages = {
-    "Mute": {
+    "Mute": { #Special Role Added
         "message": dedent("""
-        **Special Role Added** | Case {case}
+        **Mute** | Case {case}
         **User**: {user} ({user_id}) ({user_mention})
         **Role**: {role} ({role_id})
         **Reason**: {reason}
@@ -46,9 +46,9 @@ modlogs_messages = {
         **Moderator**: {moderator}
         """)
     },
-    "Unmute": {
+    "Unmute": { #Special Role Removed
         "message": dedent("""
-        **Special Role Removed** | Case {case}
+        **Unmute** | Case {case}
         **User**: {user} ({user_id}) ({user_mention})
         **Role**: {role} ({role_id})
         **Reason**: {reason}

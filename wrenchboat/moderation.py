@@ -24,6 +24,65 @@ class infractions(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.command(name="massban",usage="[@user] <reason>",description="Ban multiple people from your server at once.")
+    @commands.has_permissions(ban_members=True)
+    async def _massban(self,ctx,users: commands.Greedy[discord.Member],*,reason="No reason provided. You can add a reason with `case <id> <reason>`."):
+
+        userslist = ', '.join(x.name for x in users)
+        try:
+            for x in users:
+                await x.ban(reason=f"[{ctx.author}]: {reason}")
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+        
+        await ctx.channel.send(f"The following users have neen banned: {userslist}.")
+
+    @commands.command(name="masskick",usage="[@user] <reason>",description="Kick multiple people from your server at once.")
+    @commands.has_permissions(kick_members=True)
+    async def _masskick(self,ctx,users: commands.Greedy[discord.Member],*,reason="No reason provided. You can add a reason with `case <id> <reason>`."):
+
+        userslist = ', '.join(x.name for x in users)
+        try:
+            for x in users:
+                await x.kick(reason=f"[{ctx.author}]: {reason}")
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+        
+        await ctx.channel.send(f"The following users have neen kicked: {userslist}.")
+
+    @commands.command(name="massmute",usage="[@user] <reason>",description="Mutes multiple people at once. Has a limit of **5** however.")
+    @commands.has_permissions(kick_members=True)
+    async def _massmute(self,ctx,users: commands.Greedy[discord.Member],*,reason="No reason provided. You can add a reason with `case <id> <reason>`."):
+
+        if len(users) > 5:
+            return await ctx.channel.send("No go my guy!!! This command has a limit of 5 users for **everyone**, sorry.")
+
+        userslist = ', '.join(x.name for x in users)
+        async with ctx.bot.pool.acquire() as conn:
+            mute = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+
+            try:
+                mutedlist = []
+                muterole = ctx.channel.guild.get_role(mute['muterole'])
+                dontmuterole = ctx.channel.guild.get_role(mute['dontmute'])
+
+                for x in users:
+                    if dontmuterole in x.roles:
+                        continue
+                    await x.add_roles(muterole,reason=f"[{ctx.author}]: {reason}")
+                    mutedlist.append(x)
+            except Exception as err:
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
+            
+            userslist = ', '.join(x.name for x in mutedlist)
+            await ctx.channel.send(f"The following users have neen muted: {userslist}.")
+
     @commands.command(
         name="ban",
         usage="@user <reason>",
@@ -290,6 +349,9 @@ class infractions(commands.Cog):
                 ctx.guild.id,
             )
 
+            if not selected:
+                return await ctx.channel.send("Nahhh, they have been good I guess..")
+
             pages = []
 
             for x in selected:
@@ -323,6 +385,7 @@ class infractions(commands.Cog):
                     modlogs_message = await modlogs.fetch_message(data['modlogs'])
                     role = ctx.guild.get_role(guild['muterole'])
                     user = await self.bot.fetch_user(data['target'])
+                    
                     await modlogs_message.edit(content=dedent(f"""
                     **{data['type']}** | Case {data['id']}
                     **User**: {user} ({user.id}) ({user.mention})
@@ -347,10 +410,9 @@ class infractions(commands.Cog):
 
         try:
             await self.bot.pool.execute("DELETE FROM infractions WHERE guild = $1",ctx.channel.guild.id)
+            del self.bot.cases[ctx.channel.guild.id]
         except Exception as err:
-            return await ctx.channel.send(
-                f"Don't expect me to know what happened >:)\n{err}"
-            )
+            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
 
         await ctx.channel.send(f"👌")             
 

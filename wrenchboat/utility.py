@@ -71,7 +71,7 @@ class utility(commands.Cog):
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
             )
-
+    
     @commands.command(name="bug", usage="None", description="Found a bug? Report it at the link provided.")
     async def _bug(self,ctx):
 

@@ -24,13 +24,77 @@ class images(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="pat")
-    async def _pat(self,ctx,user:discord.Member):
-        
-        url=random.choice(pat)
-        embed = discord.Embed(color=0x99AAB5,description=f"**{ctx.author.display_name}** pats **{user.display_name}**")
-        embed.set_image(url=url)
-        await ctx.channel.send(embed=embed)
+    @commands.command(name="pat", usage="@user", description="Show your love by giving some cutie a pat. ~Baka")
+    async def _pat(self,ctx,user:discord.Member=None):
+
+        if user is None:
+            return await ctx.send(f"Provide a person to {ctx.command.name} silly")
+
+        async with aiohttp.ClientSession() as cs:
+            async with cs.get("https://api.tenor.com/v1/random?q=anime pat&key=9SY3T59FQIOA&limit=1&media_filter=minimal&contentfilter=high") as r:
+                data = await r.json()
+                hmm = list(data['results'])
+                await ctx.channel.send(f"**{ctx.author.display_name}** pats **{user.display_name}**\n{hmm[0]['url']}")
+
+    @commands.command(name="hug", usage="@user", description="hug someone who just needs a hug ~<3")
+    async def _hug(self,ctx,user:discord.Member=None):
+
+        if user is None:
+            return await ctx.send(f"Provide a person to {ctx.command.name} silly")
+
+        async with aiohttp.ClientSession() as cs:
+            async with cs.get("https://api.tenor.com/v1/random?q=anime hug&key=9SY3T59FQIOA&limit=1&media_filter=minimal&contentfilter=high") as r:
+                data = await r.json()
+                hmm = list(data['results'])
+                await ctx.channel.send(f"**{ctx.author.display_name}** hugs **{user.display_name}**\n{hmm[0]['url']}")
+
+    @commands.command(name="poke", usage="@user", description="If someone annoys you... just poke them OwO")
+    async def _poke(self,ctx,user:discord.Member=None):
+
+        if user is None:
+            return await ctx.send(f"Provide a person to {ctx.command.name} silly")
+
+        async with aiohttp.ClientSession() as cs:
+            async with cs.get("https://api.tenor.com/v1/random?q=anime poke&key=9SY3T59FQIOA&limit=1&media_filter=minimal&contentfilter=high") as r:
+                data = await r.json()
+                hmm = list(data['results'])
+                await ctx.channel.send(f"**{ctx.author.display_name}** pokes **{user.display_name}**\n{hmm[0]['url']}")
+
+    @commands.command(name="slap", usage="@user", description="Someone being rude, then put them in their place by slapping them!")
+    async def _slap(self,ctx,user:discord.Member=None):
+
+        if user is None:
+            return await ctx.send(f"Provide a person to {ctx.command.name} silly")
+
+        async with aiohttp.ClientSession() as cs:
+            async with cs.get("https://api.tenor.com/v1/random?q=anime slap&key=9SY3T59FQIOA&limit=1&media_filter=minimal&contentfilter=high") as r:
+                data = await r.json()
+                hmm = list(data['results'])
+                await ctx.channel.send(f"**{ctx.author.display_name}** slap **{user.display_name}**\n{hmm[0]['url']}")
+
+    @commands.command(name="kiss", usage="@user", description="Kiss your special someone ~! Cuties")
+    async def _kiss(self,ctx,user:discord.Member=None):
+
+        if user is None:
+            return await ctx.send(f"Provide a person to {ctx.command.name} silly")
+
+        async with aiohttp.ClientSession() as cs:
+            async with cs.get("https://api.tenor.com/v1/random?q=anime kiss&key=9SY3T59FQIOA&limit=1&media_filter=minimal&contentfilter=medium") as r:
+                data = await r.json()
+                hmm = list(data['results'])
+                await ctx.channel.send(f"**{ctx.author.display_name}** kisses **{user.display_name}**\n{hmm[0]['url']}")
+
+    @commands.command(name="punch", usage="@user", description="No description needed for this one...")
+    async def _punch(self,ctx,user:discord.Member=None):
+
+        if user is None:
+            return await ctx.send(f"Provide a person to {ctx.command.name} silly")
+
+        async with aiohttp.ClientSession() as cs:
+            async with cs.get("https://api.tenor.com/v1/random?q=anime punch&key=9SY3T59FQIOA&limit=1&media_filter=minimal&contentfilter=medium") as r:
+                data = await r.json()
+                hmm = list(data['results'])
+                await ctx.channel.send(f"**{ctx.author.display_name}** punches **{user.display_name}**\n{hmm[0]['url']}")
 
 def setup(bot):
     bot.add_cog(images(bot))

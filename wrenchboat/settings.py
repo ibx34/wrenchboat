@@ -177,6 +177,52 @@ class config(commands.Cog):
 
             await ctx.channel.send(f"👍")
 
+    @commands.command(name="modrole",description="Set your server's modrole. This is used for the `pingmod` command")
+    @commands.has_permissions(administrator=True)
+    async def _modrole(self, ctx,role:discord.Role = None):
+        async with self.bot.pool.acquire() as conn:
+            try:
+                await conn.execute(
+                    "UPDATE guilds SET modrole = $1 WHERE id = $2",
+                    None if role is None else role.id,
+                    ctx.channel.guild.id,
+                )
+            except Exception as err:
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
+
+            await ctx.channel.send(
+                f"""**You ask too much of me!** I have set your mod role to {role.mention if role is not None else "Disabled"}""",
+                allowed_mentions=discord.AllowedMentions(
+                    everyone=False, roles=False, users=False
+                ),
+            )
+
+    @commands.command(name="pingmod",description="Ping a random **online** moderator from your server's mod role (Inspired by Kitchen Sink)")
+    async def _pingmod(self,ctx,*,message):
+
+        embed = discord.Embed(color=0x99AAB5,description=message,timestmap=datetime.utcnow())
+        embed.set_footer(text=f"{ctx.author} | {ctx.author.id}",icon_url=ctx.author.avatar_url)
+
+        async with self.bot.pool.acquire() as conn:
+            guild = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+
+            try:
+                modrole = ctx.guild.get_role(guild['modrole'])
+                pingable = []
+                for x in modrole.members:
+                    if x.status != discord.Status.online:
+                        continue
+                    pingable.append(x.id)
+                        
+                
+                await ctx.channel.send(f"<@{random.choice(pingable)}>, **{ctx.author}** has a requested a moderator.",embed=embed)
+            except Exception as err:
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
+
 
 def setup(bot):
     bot.add_cog(config(bot))
