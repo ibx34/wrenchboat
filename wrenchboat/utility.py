@@ -72,6 +72,19 @@ class utility(commands.Cog):
                 f"Don't expect me to know what happened >:)\n{err}"
             )
     
+    @commands.command(name="sql", usage="query", description="Execute some cute sql in Discord **WWOWOWOWOWO**")
+    @commands.is_owner()
+    async def _sql(self,ctx,*,statement):
+        async with self.bot.pool.acquire() as conn:
+            try:
+                await conn.fetchrow(statement)
+            except Exception as err:
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
+            
+            await ctx.channel.send(":ok_hand:")
+
     @commands.command(name="bug", usage="None", description="Found a bug? Report it at the link provided.")
     async def _bug(self,ctx):
 
