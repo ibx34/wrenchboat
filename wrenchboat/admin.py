@@ -602,28 +602,28 @@ class admin(commands.Cog):
 
     @_role.command(name="add",
         usage="@user (role)",
-        description="Add a role to a user on the fly. :warning: If the role you are trying to add is above you, it wont respond.",
+        description="Add a role to a user on the fly. If the role you are trying to add is above you, it wont respond.",
     )
     @commands.has_permissions(manage_roles=True)
-    async def _add(self, ctx, user: discord.Member, *, role: discord.Role):
+    async def _add(self, ctx, user: discord.Member, *, role:discord.Role):
 
         if checks.above(self=self.bot, user=user, moderator=ctx.author) is False:
             return await ctx.channel.send(
                 f"You're literally an idiot. You don't have permission to do that. Did you think I was gonna let you?"
             )
 
-        if checks.role_above(self=self.bot, user=ctx.author, role=role) is False:
+        if checks.role_above(self=self.bot, user=ctx.author, role=role1) is False:
             return
 
         try:
-            await user.add_roles(role)
+            await user.add_roles(role1)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
             )
 
         await ctx.channel.send(
-            f"Okay, I added the role {role.mention} to {user}, happy?",
+            f"Okay, I added the role {role1.mention} to {user}, happy?",
             allowed_mentions=discord.AllowedMentions(
                 everyone=False, roles=False, users=False
             ),
@@ -632,28 +632,30 @@ class admin(commands.Cog):
     @_role.command(
         name="remove",
         usage="@user (role)",
-        description="Remove a role from a user on the fly. :warning: If the role you are trying to add is above you, it wont respond.",
+        description="Remove a role from a user on the fly. If the role you are trying to add is above you, it wont respond.",
     )
     @commands.has_permissions(manage_roles=True)
-    async def _remove(self, ctx, user: discord.Member, *, role: discord.Role):
+    async def _remove(self, ctx, user: discord.Member, *, role:discord.Role):
+
+
 
         if checks.above(self=self.bot, user=user, moderator=ctx.author) is False:
             return await ctx.channel.send(
                 f"You're literally an idiot. You don't have permission to do that. Did you think I was gonna let you?"
             )
 
-        if checks.role_above(self=self.bot, user=ctx.author, role=role) is False:
+        if checks.role_above(self=self.bot, user=ctx.author, role=role1) is False:
             return
 
         try:
-            await user.remove_roles(role)
+            await user.remove_roles(role1)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
             )
 
         await ctx.channel.send(
-            f"Okay, I removed the role {role.mention} from {user}, happy?",
+            f"Okay, I removed the role {role1.mention} from {user}, happy?",
             allowed_mentions=discord.AllowedMentions(
                 everyone=False, roles=False, users=False
             )
@@ -665,12 +667,14 @@ class admin(commands.Cog):
         description="Add a role to all users in your server. *May take some time.*",
     )
     @commands.has_permissions(administrator=True)
-    async def _all(self, ctx, role: discord.Role):
+    async def _all(self, ctx, role:discord.Role):
+
+
 
         try:
             count = 0
             for x in ctx.guild.members:
-                await x.add_roles(role)
+                await x.add_roles(role1)
                 count += 1
         except Exception as err:
             return await ctx.channel.send(
@@ -678,7 +682,7 @@ class admin(commands.Cog):
             )
 
         await ctx.channel.send(
-            f"👌 I have added {role.mention} to {count} users.",
+            f"👌 I have added {role1.mention} to {count} users.",
             allowed_mentions=discord.AllowedMentions(
                 everyone=False, roles=False, users=False
             ),
@@ -690,12 +694,14 @@ class admin(commands.Cog):
         description="Remove a role from everyone **WITH** the role.",
     )
     @commands.has_permissions(administrator=True)
-    async def _nuke(self, ctx, role: discord.Role):
+    async def _nuke(self, ctx, role:discord.Role):
+
+
 
         try:
             count = 0
-            for x in role.members:
-                await x.remove_roles(role)
+            for x in role1.members:
+                await x.remove_roles(role1)
                 count += 1
         except Exception as err:
             return await ctx.channel.send(
@@ -703,7 +709,7 @@ class admin(commands.Cog):
             )
 
         await ctx.channel.send(
-            f"👌 I have removed {role.mention} from {count} users.",
+            f"👌 I have removed {role1.mention} from {count} users.",
             allowed_mentions=discord.AllowedMentions(
                 everyone=False, roles=False, users=False
             ),
@@ -727,8 +733,11 @@ class admin(commands.Cog):
     @_role.command(name="delete",usage="@role",description="Swiftly delete a role from your server!!!!!")
     @commands.has_permissions(administrator=True)
     async def _delete(self, ctx, *, role:discord.Role):    
+
+
+
         try:
-            await role.delete(reason=f"Role deleted by {ctx.author}")
+            await role1.delete(reason=f"Role deleted by {ctx.author}")
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -737,10 +746,12 @@ class admin(commands.Cog):
         await ctx.channel.send(":ok_hand:")
 
     @_role.command(name="id",usage="@role",description="Get the id of a role")
-    @commands.has_permissions(administrator=True)
     async def _id(self, ctx, *, role:discord.Role): 
+
+
+
         try:   
-            await ctx.channel.send(f"**{role.mention}'s** id is `{role.id}`",
+            await ctx.channel.send(f"**{role1.mention}'s** id is `{role1.id}`",
             allowed_mentions=discord.AllowedMentions(
                 everyone=False, roles=False, users=False
             ),
@@ -751,14 +762,23 @@ class admin(commands.Cog):
                 f"Don't expect me to know what happened >:)\n{err}"
             )
     
-    @commands.command(name="memberids",usage="@role",description="Get all member's ids who are in a role.",aliases=['roleids'])
-    @commands.has_permissions(administrator=True)
-    async def _memberids(self, ctx, *, role):     
-        
-        role1 = discord.utils.find(lambda r: r.name.lower() == role.lower(),ctx.channel.guild.roles)
+    @_role.command(name="color",usage="@role",description="Get the color of a role")
+    async def _color(self, ctx, *, role): 
 
-        if not role1:
-            return await ctx.channel.send("Not a role. Come back when you get a real role :sunglasses:")
+        try:   
+            await ctx.channel.send(f"**{role1.mention}'s** color is `{role1.color}`",
+            allowed_mentions=discord.AllowedMentions(
+                everyone=False, roles=False, users=False
+            ),
+        )
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )    
+    
+    @_role.command(name="memberids",usage="@role",description="Get all member's ids who are in a role.",aliases=['roleids'])
+    @commands.has_permissions(administrator=True)
+    async def _memberids(self, ctx, *, role:discord.Role):     
         
         list = []
         length = [round(len(role1.members) / 1)]
