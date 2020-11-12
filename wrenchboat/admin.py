@@ -4,6 +4,7 @@ import random
 import re
 import sys
 from datetime import datetime
+from itertools import accumulate
 from textwrap import dedent
 
 import aiohttp
@@ -707,6 +708,72 @@ class admin(commands.Cog):
                 everyone=False, roles=False, users=False
             ),
         )
+    
+    @_role.command(name="create",usage="(name)",description="Create a role on your server, great for lazy people")
+    @commands.has_permissions(administrator=True)
+    async def _create(self, ctx, *, name:str):    
+        if len(name) > 30:
+            return await ctx.channel.send("Okay smart guy, want me to get introuble? Your names cant be over **30** characters")
+
+        try:
+            await ctx.guild.create_role(name=name,reason=f"Role create by {ctx.author}")
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(":ok_hand:")
+
+    @_role.command(name="delete",usage="@role",description="Swiftly delete a role from your server!!!!!")
+    @commands.has_permissions(administrator=True)
+    async def _delete(self, ctx, *, role:discord.Role):    
+        try:
+            await role.delete(reason=f"Role deleted by {ctx.author}")
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(":ok_hand:")
+
+    @_role.command(name="id",usage="@role",description="Get the id of a role")
+    @commands.has_permissions(administrator=True)
+    async def _id(self, ctx, *, role:discord.Role): 
+        try:   
+            await ctx.channel.send(f"**{role.mention}'s** id is `{role.id}`",
+            allowed_mentions=discord.AllowedMentions(
+                everyone=False, roles=False, users=False
+            ),
+        )
+    
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+    
+    @commands.command(name="memberids",usage="@role",description="Get all member's ids who are in a role.",aliases=['roleids'])
+    @commands.has_permissions(administrator=True)
+    async def _memberids(self, ctx, *, role):     
+        
+        role1 = discord.utils.find(lambda r: r.name.lower() == role.lower(),ctx.channel.guild.roles)
+
+        if not role1:
+            return await ctx.channel.send("Not a role. Come back when you get a real role :sunglasses:")
+        
+        list = []
+        length = [round(len(role1.members) / 1)]
+        pages = []
+        for x in role1.members:
+            list.append(f"**{x.mention}**: `{x.id}`")    
+
+        Output = [list[x - y: x] for x, y in zip(accumulate(length), length)]         
+        
+        for x in Output:
+            embed = discord.Embed(color=0x99AAB5,description='\n '.join(x))
+            pages.append(embed)
+        
+        paginator = pagination.BotEmbedPaginator(ctx, pages)
+        return await paginator.run()        
 
     @commands.group(name="channel",description="Manage your server's channels with cool :sunglasses: options",invoke_without_command=True)
     @commands.has_permissions(manage_channels=True)
@@ -848,5 +915,47 @@ class admin(commands.Cog):
             return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
 
         await ctx.channel.send("👀 channel now visible!")
+
+    @commands.group(name="noroles",description="View my commands for more info you cutie <3")
+    async def _noroles(self,ctx):
+        return   
+
+    @_noroles.command(name="show",description="Shows all users without a role in your server")
+    @commands.has_permissions(manage_roles=True)
+    async def _noroles_show(self,ctx):    
+        
+        list = []
+        for x in ctx.guild.members:
+            if x.roles == [ctx.guild.default_role]:
+                list.append(x)
+        length = [round(len(list) / 1)]
+        pages = []
+
+        Output = [list[x - y: x] for x, y in zip(accumulate(length), length)]         
+        
+        for x in Output:
+            embed = discord.Embed(color=0x99AAB5,description='\n '.join(f'**{x.mention}**: `{x.id}`' for x in x))
+            pages.append(embed)
+        
+        paginator = pagination.BotEmbedPaginator(ctx, pages)
+        return await paginator.run()        
+
+    @_noroles.command(name="prune",description="Removes all users from your server with no role.")
+    @commands.has_permissions(manage_roles=True)
+    async def _noroles_prune(self,ctx):    
+        
+        list = []
+        for x in ctx.guild.members:
+            if x.roles == [ctx.guild.default_role]:
+                list.append(x)
+        
+        for x in list:
+            try:
+                await x.kick(reason=f"Auto kick: User has no roles.")
+            except Exception as err:
+                return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+
+        await ctx.channel.send(f":ok_hand: {len(list)} users have been kicked!\n**Users kicked:**\n{', '.join(f'{x}' for x in list)}")
+
 def setup(bot):
     bot.add_cog(admin(bot))
