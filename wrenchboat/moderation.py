@@ -15,6 +15,7 @@ import discord
 from discord.ext import commands
 
 from wrenchboat.utils import pagination
+from wrenchboat.utils.checks import checks
 from wrenchboat.utils.modlogs import modlogs
 
 id = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
@@ -98,6 +99,9 @@ class infractions(commands.Cog):
         reason="No reason provided. You can add a reason with `case <id> <reason>`.",
     ):
 
+        if not checks.above(self.bot,user,ctx.author):
+            return
+    
         try:
             await user.ban(reason=reason)
         except Exception as err:
@@ -162,6 +166,9 @@ class infractions(commands.Cog):
         *,
         reason="No reason provided. You can add a reason with `case <id> <reason>`.",
     ):
+
+        if not checks.above(self.bot,user,ctx.author):
+            return
 
         try:
             await user.ban(reason=reason, delete_message_days=7)
@@ -229,6 +236,9 @@ class infractions(commands.Cog):
         reason="No reason provided. You can add a reason with `case <id> <reason>`.",
     ):
 
+        if not checks.above(self.bot,user,ctx.author):
+            return
+
         try:
             await user.kick(reason=reason)
         except:
@@ -259,6 +269,9 @@ class infractions(commands.Cog):
         reason="No reason provided. You can add a reason with `case <id> <reason>`.",
     ):
 
+        if not checks.above(self.bot,user,ctx.author):
+            return
+
         failed = " "
         try:
             await user.send(f"You've been warning in **{ctx.guild.name}** for:\n{reason}")
@@ -279,6 +292,10 @@ class infractions(commands.Cog):
     @commands.command(name="mute",usage="@user <reason>",description="Add your server's mute role to a user to stop them from talking :sunglasses:")
     @commands.has_permissions(manage_messages=True)
     async def _mute(self,ctx,user:discord.Member,*,reason="No reason provided. You can add a reason with `case <id> <reason>`.",):
+
+        if not checks.above(self.bot,user,ctx.author):
+            return
+
         async with ctx.bot.pool.acquire() as conn:
             mute = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
 
@@ -309,6 +326,10 @@ class infractions(commands.Cog):
     @commands.command(name="unmute",usage="@user <reason>",description="Remove your server's mute role to allow the user to speak again, be nice!")
     @commands.has_permissions(manage_messages=True)
     async def _unmute(self,ctx,user:discord.Member,*,reason="No reason provided. You can add a reason with `case <id> <reason>`.",):
+
+        if not checks.above(self.bot,user,ctx.author):
+            return
+
         async with ctx.bot.pool.acquire() as conn:
             mute = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
 
