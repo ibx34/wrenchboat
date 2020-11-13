@@ -1,3 +1,5 @@
+[![CodeFactor](https://www.codefactor.io/repository/github/ibx34/wrenchboat/badge/master)](https://www.codefactor.io/repository/github/ibx34/wrenchboat/overview/master)
+
 # WrenchBoat
 
 [![](https://discordapp.com/api/guilds/774070668999655474/embed.png?style=banner2)](https://discord.gg/q7Uq8TbYvr)
