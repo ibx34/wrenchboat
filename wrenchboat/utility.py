@@ -95,5 +95,62 @@ class utility(commands.Cog):
 
         return await ctx.channel.send(f"You can join our support server @: {config.support}")
 
+    """
+    highligher
+    """
+
+    @commands.group(name="highlight",description="Highlight words and get dmed when someone mentions it!",invoke_without_command=True,aliases=['hl'])
+    async def _highlight(self,ctx):
+        return
+    
+    @_highlight.command(name="add",usage="(word or phrase)",description="Add a word or phrase to your highligh list.")
+    async def _add(self,ctx,*,word:str):
+
+        if len(word) > 2000:
+            return await ctx.channel.send("Nope. Not gonna do it. No, no no. (Word or prhase too long)") 
+
+        async with self.bot.pool.acquire() as conn:
+            highlight = await conn.fetchrow("SELECT * FROM highlights WHERE author = $1 AND guild = $2 AND phrase = $3",ctx.author.id,ctx.channel.guild.id,word.lower())
+
+            if highlight:
+                return await ctx.channel.send("No go!!!!! That word is already highlighted")   
+            
+            try:
+                i = await conn.fetchrow(f"INSERT INTO highlights(author,guild,phrase) VALUES($1,$2,$3) RETURNING *",ctx.author.id,ctx.channel.guild.id,word.lower())
+                self.bot.highlights[i['id']] = {"phrase": i['phrase'], "author": i['author'], "guild": i['guild']}
+            except Exception as err:
+                return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+
+            await ctx.channel.send(f":ok_hand:") 
+
+    @_highlight.command(name="delete",usage="(word or phrase)",description="Delete a previously highlighted word or phrase")
+    async def _delete(self,ctx,*,word:str):
+        async with self.bot.pool.acquire() as conn:
+            highlight = await conn.fetchrow("SELECT * FROM highlights WHERE author = $1 AND guild = $2 AND phrase = $3",ctx.author.id,ctx.channel.guild.id,word.lower())
+
+            if not highlight:
+                return await ctx.channel.send("Couldn't that highlighted phrase or word... ")   
+            
+            try:
+                i = await conn.fetchrow(f"DELETE FROM highlights WHERE author = $1 AND guild = $2 AND phrase = $3",ctx.author.id,ctx.channel.guild.id,word.lower())
+                del self.bot.highlights[highlight['id']]
+            except Exception as err:
+                return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+
+            await ctx.channel.send(f":ok_hand: (deleted ig)") 
+
+    @_highlight.command(name="clear",description="Delete all your highlighted words for the server.")
+    async def _clear(self,ctx):
+        async with self.bot.pool.acquire() as conn:
+            try:
+                await conn.fetchrow(f"DELETE FROM highlights WHERE author = $1 AND guild = $2",ctx.author.id,ctx.channel.guild.id)
+                for x in sorted(self.bot.highlights):
+                    if self.bot.highlights[x]['author'] == ctx.author.id and self.bot.highlights[x]['guild'] == ctx.guild.id:
+                        del self.bot.highlights[x]
+            except Exception as err:
+                return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+
+            await ctx.channel.send(f":ok_hand: I deleted all your highlighted words!!!") 
+
 def setup(bot):
     bot.add_cog(utility(bot))
