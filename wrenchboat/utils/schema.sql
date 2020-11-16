@@ -9,6 +9,7 @@ IF NOT EXISTS guilds
     "modlogs" BIGINT,
     "antiprofanity" VARCHAR,
     "antihoist" BOOLEAN DEFAULT FALSE, --VARCHAR
+    "antinvite" VARCHAR, 
     "modrole" BIGINT,
     "starboard_channel" BIGINT,
     "needed_stars" BIGINT DEFAULT 3,
@@ -25,7 +26,8 @@ IF NOT EXISTS infractions
     "reason" VARCHAR,
     "time_punsihed" TIMESTAMP,
     "guild" BIGINT,
-    "modlogs" BIGINT
+    "modlogs" BIGINT,
+    "roles" BIGINT[] DEFAULT '{}'
 );
 
 CREATE TABLE 
@@ -45,7 +47,8 @@ IF NOT EXISTS user_backups
 (
     "id" SERIAL,
     "target" BIGINT,
-    "roles" BIGINT[] DEFAULT '{}'
+    "roles" BIGINT[] DEFAULT '{}',
+    "guild" BIGINT
 );
 
 CREATE TABLE 
