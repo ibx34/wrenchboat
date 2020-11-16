@@ -15,7 +15,7 @@ import discord
 from discord.ext import commands
 
 from wrenchboat.utils.modlogs import modlogs
-
+import math
 
 class utility(commands.Cog):
     def __init__(self, bot):
@@ -132,7 +132,7 @@ class utility(commands.Cog):
                 return await ctx.channel.send("Couldn't that highlighted phrase or word... ")   
             
             try:
-                i = await conn.fetchrow(f"DELETE FROM highlights WHERE author = $1 AND guild = $2 AND phrase = $3",ctx.author.id,ctx.channel.guild.id,word.lower())
+                await conn.fetchrow(f"DELETE FROM highlights WHERE author = $1 AND guild = $2 AND phrase = $3",ctx.author.id,ctx.channel.guild.id,word.lower())
                 del self.bot.highlights[highlight['id']]
             except Exception as err:
                 return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
@@ -152,5 +152,21 @@ class utility(commands.Cog):
 
             await ctx.channel.send(f":ok_hand: I deleted all your highlighted words!!!") 
 
+    @commands.command(name="emoji",description="Enlarge an emoji to see it in all glory")
+    async def _emoji(self,ctx,emoji:discord.PartialEmoji):
+
+        await ctx.channel.send(emoji.url)
+
+    @commands.command(name="invite",description="Get some information on an invite")
+    async def _invite(self,ctx,invite:discord.Invite):
+        
+        invite = await self.bot.fetch_invite(invite,with_counts=True)
+        embed = discord.Embed(color=0x99AAB5,description=invite.guild.description)
+        embed.set_author(name=invite.guild,icon_url=invite.guild.icon_url)
+        embed.set_thumbnail(url=invite.guild.icon_url)
+        embed.add_field(name="Guild Information", value=f"Id: {invite.guild.id}\nCreated At: {arrow.get(invite.guild.created_at).humanize()} ({invite.guild.created_at})")
+
+        await ctx.channel.send(embed=embed)
+        
 def setup(bot):
     bot.add_cog(utility(bot))

@@ -25,6 +25,9 @@ seconds_per_unit = {"s": 1, "m": 60, "h": 3600}
 def convert_to_seconds(s):
     return int(s[:-1]) * seconds_per_unit[s[-1]]
 
+def left_pad(string: str, amount: int) -> str:
+  return ' ' * (amount - len(string)) + string
+
 
 class admin(commands.Cog):
     def __init__(self, bot):
@@ -596,9 +599,25 @@ class admin(commands.Cog):
 
         await ctx.channel.send(":ok_hand:")
 
-    @commands.group(name="role",invoke_without_command=True,description="Manage your server's roles with my many commands :)")
+    @commands.group(name="role",invoke_without_command=True,description="Manage your server's roles with my many commands :)",aliases=['roles'])
+    @commands.has_permissions(manage_roles=True)
     async def _role(self,ctx):
-        return
+
+        list = []
+        length = [round(len(ctx.channel.guild.roles) / 1)]
+        pages = []
+        for x in ctx.channel.guild.roles:
+            list.append(f"**{x.mention}**: `{x.id}`")    
+
+        Output = [list[x - y: x] for x, y in zip(accumulate(length), length)]         
+        
+        for x in Output:
+            embed = discord.Embed(color=0x99AAB5,description='\n '.join(x))
+            pages.append(embed)
+        
+        paginator = pagination.BotEmbedPaginator(ctx, pages)
+        return await paginator.run()        
+
 
     @_role.command(name="add",
         usage="@user (role)",
@@ -612,18 +631,18 @@ class admin(commands.Cog):
                 f"You're literally an idiot. You don't have permission to do that. Did you think I was gonna let you?"
             )
 
-        if checks.role_above(self=self.bot, user=ctx.author, role=role1) is False:
+        if checks.role_above(self=self.bot, user=ctx.author, role=role) is False:
             return
 
         try:
-            await user.add_roles(role1)
+            await user.add_roles(role)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
             )
 
         await ctx.channel.send(
-            f"Okay, I added the role {role1.mention} to {user}, happy?",
+            f"Okay, I added the role {role.mention} to {user}, happy?",
             allowed_mentions=discord.AllowedMentions(
                 everyone=False, roles=False, users=False
             ),
@@ -644,18 +663,18 @@ class admin(commands.Cog):
                 f"You're literally an idiot. You don't have permission to do that. Did you think I was gonna let you?"
             )
 
-        if checks.role_above(self=self.bot, user=ctx.author, role=role1) is False:
+        if checks.role_above(self=self.bot, user=ctx.author, role=role) is False:
             return
 
         try:
-            await user.remove_roles(role1)
+            await user.remove_roles(role)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
             )
 
         await ctx.channel.send(
-            f"Okay, I removed the role {role1.mention} from {user}, happy?",
+            f"Okay, I removed the role {role.mention} from {user}, happy?",
             allowed_mentions=discord.AllowedMentions(
                 everyone=False, roles=False, users=False
             )
@@ -674,7 +693,7 @@ class admin(commands.Cog):
         try:
             count = 0
             for x in ctx.guild.members:
-                await x.add_roles(role1)
+                await x.add_roles(role)
                 count += 1
         except Exception as err:
             return await ctx.channel.send(
@@ -682,7 +701,7 @@ class admin(commands.Cog):
             )
 
         await ctx.channel.send(
-            f"👌 I have added {role1.mention} to {count} users.",
+            f"👌 I have added {role.mention} to {count} users.",
             allowed_mentions=discord.AllowedMentions(
                 everyone=False, roles=False, users=False
             ),
@@ -700,8 +719,8 @@ class admin(commands.Cog):
 
         try:
             count = 0
-            for x in role1.members:
-                await x.remove_roles(role1)
+            for x in role.members:
+                await x.remove_roles(role)
                 count += 1
         except Exception as err:
             return await ctx.channel.send(
@@ -709,7 +728,7 @@ class admin(commands.Cog):
             )
 
         await ctx.channel.send(
-            f"👌 I have removed {role1.mention} from {count} users.",
+            f"👌 I have removed {role.mention} from {count} users.",
             allowed_mentions=discord.AllowedMentions(
                 everyone=False, roles=False, users=False
             ),
@@ -737,7 +756,7 @@ class admin(commands.Cog):
 
 
         try:
-            await role1.delete(reason=f"Role deleted by {ctx.author}")
+            await role.delete(reason=f"Role deleted by {ctx.author}")
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -751,7 +770,7 @@ class admin(commands.Cog):
 
 
         try:   
-            await ctx.channel.send(f"**{role1.mention}'s** id is `{role1.id}`",
+            await ctx.channel.send(f"**{role.mention}'s** id is `{role.id}`",
             allowed_mentions=discord.AllowedMentions(
                 everyone=False, roles=False, users=False
             ),
@@ -766,7 +785,7 @@ class admin(commands.Cog):
     async def _color(self, ctx, *, role): 
 
         try:   
-            await ctx.channel.send(f"**{role1.mention}'s** color is `{role1.color}`",
+            await ctx.channel.send(f"**{role.mention}'s** color is `{role.color}`",
             allowed_mentions=discord.AllowedMentions(
                 everyone=False, roles=False, users=False
             ),
@@ -781,9 +800,9 @@ class admin(commands.Cog):
     async def _memberids(self, ctx, *, role:discord.Role):     
         
         list = []
-        length = [round(len(role1.members) / 1)]
+        length = [round(len(role.members) / 1)]
         pages = []
-        for x in role1.members:
+        for x in role.members:
             list.append(f"**{x.mention}**: `{x.id}`")    
 
         Output = [list[x - y: x] for x, y in zip(accumulate(length), length)]         
@@ -977,5 +996,24 @@ class admin(commands.Cog):
 
         await ctx.channel.send(f":ok_hand: {len(list)} users have been kicked!\n**Users kicked:**\n{', '.join(f'{x}' for x in list)}")
 
-def setup(bot):
+    @commands.command(name="config",description="Check your server's config.")
+    @commands.has_permissions(manage_guild=True)
+    async def _config(self,ctx):    
+        async with self.bot.pool.acquire() as conn:
+            guild = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+
+            embed = discord.Embed(color=0x99AAB5,description=dedent(f"""
+            Prefix           : {guild['prefix']}
+            Mod Role         : <@&{guild['modrole']}>
+            Mute Role        : <@&{guild['muterole']}>
+            Don't mute role  : <@&{guild['dontmute']}>
+            Anti Profanity   : {f"True: {guild['antiprofanity']}" if guild['antiprofanity'] else "False"}
+            Anti Hoist       : {guild['antihoist']}
+            Anti Invite      : {f"True: {guild['antiprofanity']}" if guild['antinvite'] else "False"}
+            """))
+            embed.set_author(name=ctx.channel.guild,icon_url=ctx.channel.guild.icon_url)
+            embed.set_thumbnail(url=ctx.channel.guild.icon_url)
+
+            await ctx.channel.send(embed=embed)
+def setup(bot): 
     bot.add_cog(admin(bot))

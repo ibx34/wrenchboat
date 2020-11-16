@@ -44,7 +44,7 @@ class WrenchBoat(commands.Bot):
         self.prefixes = {}
         self.automod = {}
         self.muteroles = {}
-        self.antihoist = {}
+        # self.antihoist = {} NOTE: This was moved to 'self.automod' aswell as all other auto moderation actions.
         self.modlog_channel = {}
         self.highlights = {}
         self.cases = collections.defaultdict(lambda: 0)
@@ -72,10 +72,11 @@ class WrenchBoat(commands.Bot):
 
         for i in await self.pool.fetch("SELECT * FROM guilds"):
             self.prefixes[i['id']] = i['prefix']
-            self.antihoist[i['id']] = i['antihoist']
+            # self.antihoist[i['id']] = i['antihoist']
             self.modlog_channel[i['id']] = i['modlogs']
+            self.automod[i['id']] = {"antihoist": i['antihoist'], "antinvite": i['antinvite']}
             if i['antiprofanity'] in ['ban','kick','delete','mute']:
-                self.automod[i['id']] = i['antiprofanity']
+                self.automod[i['id']]['antiprofanity'] = i['antiprofanity']
 
         for i in await self.pool.fetch("SELECT * FROM infractions ORDER BY id DESC"):
             self.cases[i['guild']] = i['id']
@@ -88,7 +89,7 @@ class WrenchBoat(commands.Bot):
         except Exception as e:
             print(f"Error in schema:\n{e}")
 
-        await self.change_presence(status=discord.Status.dnd,activity=discord.Game("with wrenches"))
+        await self.change_presence(status=discord.Status.online,activity=discord.Game("with wrenches"))
         print(f"Bot started. Guilds: {len(self.guilds)} Users: {len(self.users)}")
 
     async def on_message(self, message):

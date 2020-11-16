@@ -19,7 +19,7 @@ from wrenchboat.utils.checks import checks
 from wrenchboat.utils.modlogs import modlogs
 
 
-class config(commands.Cog):
+class settings(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -112,10 +112,10 @@ class config(commands.Cog):
             try:
                 update = await conn.fetchrow(
                     "UPDATE guilds SET antihoist = $1 WHERE id = $2 RETURNING *",
-                    False if self.bot.antihoist[ctx.channel.guild.id] else True,
+                    False if self.bot.automod[ctx.channel.guild.id]['antihoist'] else True,
                     ctx.channel.guild.id,
                 )
-                self.bot.antihoist[ctx.channel.guild.id] = update["antihoist"]
+                self.bot.automod[ctx.channel.guild.id]['antihoist'] = update["antihoist"]
             except Exception as err:
                 return await ctx.channel.send(
                     f"Don't expect me to know what happened >:)\n{err}"
@@ -124,13 +124,67 @@ class config(commands.Cog):
             await ctx.channel.send("👌")
 
     @commands.group(
-        name="antiprofainity",
+        name="antinvite",
+        usage="<BAN, KICK, MUTE, DELETE>",
+        description="Remove invites from your discord server with this epic machine! When enabled the bot will do the predefined action when a user curses",
+        invoke_without_command=True,
+    )
+    @commands.has_permissions(administrator=True)
+    async def _antinvite(self, ctx, *, option):
+
+        if option.lower() not in ["ban", "mute", "kick", "delete"]:
+            return await ctx.channel.send(
+                "**BRUH** provide an actual action my guy... (Actions: warn, kick, mute)"
+            )
+
+        async with self.bot.pool.acquire() as conn:
+
+            try:
+                await conn.execute(
+                    "UPDATE guilds SET antinvite = $1 WHERE id = $2",
+                    option.lower(),
+                    ctx.channel.guild.id,
+                )
+                self.bot.automod[ctx.channel.guild.id]['antinvite'] = option.lower()
+            except Exception as err:
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
+
+            await ctx.channel.send(
+                f"Cool. I set your server's antinvite to {option.lower()}"
+            )
+
+    @_antinvite.command(
+        name="disable", description="Disable antiprofanity for your server."
+    )
+    @commands.has_permissions(administrator=True)
+    async def _antinvite_disable(self, ctx):
+
+        async with self.bot.pool.acquire() as conn:
+
+            try:
+                await conn.execute(
+                    "UPDATE guilds SET antinvite = $1 AND id = $2",
+                    None,
+                    ctx.channel.guild.id,
+                )
+                del self.bot.automod[ctx.channel.guild.id]['antinvite']
+            except Exception as err:
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
+
+            await ctx.channel.send(f"👍")
+
+    @commands.group(
+        name="antiprofanity",
         usage="<BAN, KICK, MUTE, DELETE>",
         description="Enable antiprofainity on your server. When enabled the bot will do the predefined action when a user curses (:warning: THIS CAN BE HARSH)",
         invoke_without_command=True,
     )
     @commands.has_permissions(administrator=True)
-    async def _antiprofainity(self, ctx, *, option):
+    async def _antiprofanity(self, ctx, *, option):
 
         if option.lower() not in ["ban", "mute", "kick", "delete"]:
             return await ctx.channel.send(
@@ -145,7 +199,7 @@ class config(commands.Cog):
                     option.lower(),
                     ctx.channel.guild.id,
                 )
-                self.bot.automod[ctx.channel.guild.id] = option.lower()
+                self.bot.automod[ctx.channel.guild.id]['antiprofanity'] = option.lower()
             except Exception as err:
                 return await ctx.channel.send(
                     f"Don't expect me to know what happened >:)\n{err}"
@@ -155,11 +209,11 @@ class config(commands.Cog):
                 f"Cool. I set your server's antiprofanity to {option.lower()}"
             )
 
-    @_antiprofainity.command(
+    @_antiprofanity.command(
         name="disable", description="Disable antiprofanity for your server."
     )
     @commands.has_permissions(administrator=True)
-    async def _antiprofainity_disable(self, ctx):
+    async def _antiprofanity_disable(self, ctx):
 
         async with self.bot.pool.acquire() as conn:
 
@@ -169,7 +223,7 @@ class config(commands.Cog):
                     None,
                     ctx.channel.guild.id,
                 )
-                del self.bot.automod[ctx.channel.guild.id]
+                del self.bot.automod[ctx.channel.guild.id]['antiprofanity']
             except Exception as err:
                 return await ctx.channel.send(
                     f"Don't expect me to know what happened >:)\n{err}"
@@ -223,6 +277,5 @@ class config(commands.Cog):
                     f"Don't expect me to know what happened >:)\n{err}"
                 )
 
-
 def setup(bot):
-    bot.add_cog(config(bot))
+    bot.add_cog(settings(bot))

@@ -22,6 +22,22 @@ modlogs_messages = {
         **Moderator**: {moderator}
         """)
     },
+    "Voicemute": {
+        "message": dedent("""
+        **Voicemute** | Case {case}
+        **User**: {user} ({user_id}) ({user_mention})
+        **Reason**: {reason}
+        **Moderator**: {moderator}
+        """)        
+    },
+    "Voiceunmute": {
+        "message": dedent("""
+        **Voicemute** | Case {case}
+        **User**: {user} ({user_id}) ({user_mention})
+        **Reason**: {reason}
+        **Moderator**: {moderator}
+        """)        
+    },
     "Kick": {
         "message": dedent(""" 
         **Kick** | Case {case}
@@ -92,6 +108,8 @@ async def modlogs(self, moderator, user, reason, case, type, time, role=None):
             modlogs = self.get_channel(self.modlog_channel.get(user.guild.id))
             self.cases[user.guild.id] += 1
 
+            if reason == "No reason provided. You can add a reason with `case <id> <reason>`.":
+                reason = f"No reason provided. You can add a reason with `case {self.cases[user.guild.id]} <reason>`."
             try:
                 modlogs_message = await modlogs.send(
                     modlogs_messages[type]["message"].format(
