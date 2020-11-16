@@ -1,4 +1,5 @@
 import csv
+import math
 import os
 import random
 import re
@@ -10,12 +11,14 @@ import aiohttp
 import aioredis
 import arrow
 import asyncpg
+from io import BytesIO
 import config
 import discord
+import requests
 from discord.ext import commands
-
+from base64 import decode
 from wrenchboat.utils.modlogs import modlogs
-import math
+
 
 class utility(commands.Cog):
     def __init__(self, bot):
@@ -152,10 +155,37 @@ class utility(commands.Cog):
 
             await ctx.channel.send(f":ok_hand: I deleted all your highlighted words!!!") 
 
-    @commands.command(name="emoji",description="Enlarge an emoji to see it in all glory")
+    @commands.group(name="emoji",description="Enlarge an emoji to see it in all glory",invoke_without_command=True)
     async def _emoji(self,ctx,emoji:discord.PartialEmoji):
 
         await ctx.channel.send(emoji.url)
+    
+    @_emoji.command(name="add",usage="(add attachment)",description="Add an emoji to your server without going through Discord's UI")
+    @commands.has_permissions(manage_emojis=True)
+    async def _add(self,ctx,*,name=None):
+        
+        attachment = ctx.message.attachments
+        if not attachment:
+            return await ctx.channel.send("Did you read my usage? SMH. Add an attachment to be used.")
+        
+        try:  
+            response = requests.get(attachment[0].url)
+            emoji = await ctx.channel.guild.create_custom_emoji(name=attachment[0].filename[:32] if name is None else name,image=BytesIO(response.content).getvalue(),reason=f"Emoji added on the fly by: {ctx.author}")
+        except Exception as err:
+            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+
+        await ctx.channel.send(f"{emoji}")
+
+    @_emoji.command(name="delete",usage="(emoji)",description="Delete an emoji from your server without going through Discord's UI")
+    @commands.has_permissions(manage_emojis=True)
+    async def _delete(self,ctx,*,emoji:discord.Emoji):
+
+        try:  
+            await emoji.delete(reason=f"Emoji: {emoji.name} ({emoji.id}) deleted by: {ctx.author} ({ctx.author.id})")
+        except Exception as err:
+            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+
+        await ctx.channel.send(f":ok_hand:")
 
     @commands.command(name="invite",description="Get some information on an invite")
     async def _invite(self,ctx,invite:discord.Invite):
