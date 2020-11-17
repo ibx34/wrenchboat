@@ -111,12 +111,10 @@ class WrenchBoat(commands.Bot):
         await self.invoke(ctx)
     
     async def on_guild_join(self, guild):
-        
-        if guild.owner not in self.guild.members:
-            await guild.leave()
             
         try:
-            await self.pool.execute("INSERT INTO guilds(id,prefix) VALUES($1,$2)", guild.id, "p!")
+            i = await self.pool.fetchrow("INSERT INTO guilds(id,prefix) VALUES($1,$2) RETURNING *", guild.id, "!w")
+            self.automod[i['id']] = {"antihoist": i['antihoist'], "antinvite": i['antinvite']}    
         except KeyError:
             pass
 
