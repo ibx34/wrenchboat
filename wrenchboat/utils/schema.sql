@@ -74,6 +74,7 @@ IF NOT EXISTS highlights
 CREATE TABLE
 IF NOT EXISTS notes
 (
+    "id" SERIAL,
     "guild" BIGINT,
     "author" BIGINT,
     "target" BIGINT,
