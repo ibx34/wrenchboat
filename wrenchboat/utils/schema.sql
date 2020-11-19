@@ -69,4 +69,14 @@ IF NOT EXISTS highlights
     "author" BIGINT,
     "id" SERIAL,
     "phrase" VARCHAR
+);
+
+CREATE TABLE
+IF NOT EXISTS notes
+(
+    "guild" BIGINT,
+    "author" BIGINT,
+    "target" BIGINT,
+    "content" VARCHAR,
+    "time_given" TIMESTAMP
 )
