@@ -26,14 +26,10 @@ class Switch(object):
         return await self.message.delete()
 
     async def ban(self):
-        return await self.user.ban(
-            reason=f"[AutoModeration]: {self.message.author} ({self.message.author.id})"
-        )
+        return await self.user.ban(reason=f"[AutoModeration]: {self.message.author} ({self.message.author.id})")
 
     async def kick(self):
-        return await self.user.kick(
-            reason=f"[AutoModeration]: {self.message.author} ({self.message.author.id})"
-        )
+        return await self.user.kick(reason=f"[AutoModeration]: {self.message.author} ({self.message.author.id})")
 
     async def mute(self):
         async with self.bot.pool.acquire() as conn:
@@ -54,7 +50,6 @@ class Switch(object):
             except:
                 return
 
-
 class AutoModeration(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -69,6 +64,10 @@ class AutoModeration(commands.Cog):
 
         """
         Anti Invite module
+
+        - Only fires when anti-invite is on in the "calling" guild. 
+        - Searches for "discord.gg/", "discord.com/invite" and "discordapp.com/invite" invite styles.
+        - currently ignores embeds. Planned on making an option for this.
         """
 
         if self.bot.automod[message.guild.id].get('antinvite') is None:
@@ -87,6 +86,9 @@ class AutoModeration(commands.Cog):
 
         """
         Anti Cursing module
+
+        - Only fires when anti-profanity is on in the "calling" guild. 
+        - searches for all words in wrenchboat/assets/words.py
         """
 
         if self.bot.automod[message.guild.id].get('antiprofanity') is None:
