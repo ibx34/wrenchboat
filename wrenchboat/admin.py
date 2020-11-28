@@ -1,9 +1,11 @@
 import csv
+import json
 import os
 import random
 import re
 import sys
-from datetime import datetime
+import typing
+from datetime import datetime, timedelta
 from itertools import accumulate
 from textwrap import dedent
 
@@ -13,7 +15,9 @@ import arrow
 import asyncpg
 import config
 import discord
+import yaml
 from discord.ext import commands
+from unidecode import unidecode
 
 from wrenchboat.utils import pagination
 from wrenchboat.utils.checks import checks
@@ -25,8 +29,9 @@ seconds_per_unit = {"s": 1, "m": 60, "h": 3600}
 def convert_to_seconds(s):
     return int(s[:-1]) * seconds_per_unit[s[-1]]
 
+
 def left_pad(string: str, amount: int) -> str:
-  return ' ' * (amount - len(string)) + string
+    return " " * (amount - len(string)) + string
 
 
 class admin(commands.Cog):
@@ -60,34 +65,72 @@ class admin(commands.Cog):
         )
 
     @commands.command(
+        name="dezalgo",
+        usage="@user",
+        description="Removes and trys to translate any zalgo in a users nickname",
+    )
+    @commands.has_permissions(manage_nicknames=True)
+    async def _dezalgo(self, ctx, user: discord.Member, *, new_nick: str = None):
+
+        try:
+            await user.edit(
+                nick="".join(filter(str.isalnum, user.nick[:32])),
+                reason=f"[{ctx.author}]: dezalgo {user} ({user.id})",
+            )
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(
+            f":ok_hand: I removed any zalgo that I found. Their new nick is `{user.nick}`"
+        )
+
+    @commands.command(
         name="decancer",
         usage="@user",
-        description="Remove any non numeric or alphanumeric characters from a user's nickname or name",
+        description="Remove any annoying / spammy characters from a users nickname (or name)",
     )
     @commands.has_permissions(manage_nicknames=True)
     async def _decancer(self, ctx, user: discord.Member):
 
         try:
-            if user.nick.isalnum() == False or user.name.isalnum() == False:
-                await user.edit(
-                    nick="Decancered name",
-                    reason=f"[{ctx.author}]: Decancer {user} ({user.id})",
-                )
+            new_name = unidecode(user.nick) if user.nick else unidecode(user.name)
+            await user.edit(
+                nick=new_name[:32], reason=f"[{ctx.author}]: Decancer {user} ({user.id})",
+            )
 
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
             )
 
-        await ctx.channel.send(f"I have decancered {user}'s nickname (or name).")
-        await modlogs(
-            self=self.bot,
-            moderator=ctx.author,
-            user=user,
-            reason=f"Name decancer",
-            type=ctx.command.name.capitalize(),
-            case=None,
-            time=datetime.utcnow(),
+        await ctx.channel.send(
+            f"I have cleaned {user}!!!!!! Their new nickname is `{new_name}`"
+        )
+
+    @commands.command(
+        name="dehoist",
+        usage="@user",
+        description="Remove an characters in a user's name that may allow them to hoist.",
+    )
+    @commands.has_permissions(manage_nicknames=True)
+    async def _dehoist(self, ctx, user: discord.Member):
+
+        try:
+            for x in config.characters:
+                if user.nick.startswith(x):
+                    await user.edit(
+                        nick=" ឵" + user.nick.replace(x, ""),
+                        reason=f"[{ctx.author}]: Name sanitation",
+                    )
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(
+            f"I have dehoisted {user}. Their new nickname is `{user.nick}`"
         )
 
     @commands.group(
@@ -95,7 +138,7 @@ class admin(commands.Cog):
         invoke_without_command=True,
         usage="(amount)",
         description="Purge an amount of messages from a channel. (Pinned messages are ignored).",
-        aliases=['prune','clear','massdelete']
+        aliases=["prune", "clear", "massdelete"],
     )
     @commands.has_permissions(manage_messages=True)
     async def _purge(self, ctx, amount: int):
@@ -203,7 +246,7 @@ class admin(commands.Cog):
         description="Purge an amount of messages that have reactions or a certain reaction.",
     )
     @commands.has_permissions(manage_messages=True)
-    async def _reactions(self, ctx, amount: int, reaction:str=None):
+    async def _reactions(self, ctx, amount: int, reaction: str = None):
         def has_reactions(m):
             if reaction is not None:
                 for x in m.reactions:
@@ -222,14 +265,14 @@ class admin(commands.Cog):
         await ctx.channel.send(
             f"I have purged **{len(purged)}** messages that had {f'the reaction {reaction}' if reaction is not None else 'reactions.'} *This took me a lot of work :sad:*"
         )
-    
+
     @_purge.command(
         name="mentions",
         usage="(amount) <mention>",
         description="Purge an amount of messages that mentions anyone or a certain someone",
     )
     @commands.has_permissions(manage_messages=True)
-    async def _mentions(self, ctx, amount: int, member:discord.Member=None):
+    async def _mentions(self, ctx, amount: int, member: discord.Member = None):
         def has_mentions(m):
             if member is not None:
                 if member.id in m.mentions.id:
@@ -246,9 +289,7 @@ class admin(commands.Cog):
 
         await ctx.channel.send(
             f"I have purged **{len(purged)}** messages that {f'mentioned {member.mention} *no I didnt ping them <3*' if member is not None else 'had mentions in them'}",
-            allowed_mentions=discord.AllowedMentions(
-                everyone=False, users=False
-            ),
+            allowed_mentions=discord.AllowedMentions(everyone=False, users=False),
         )
 
     @_purge.command(
@@ -269,7 +310,8 @@ class admin(commands.Cog):
             )
 
         await ctx.channel.send(
-            f"I have purged **{len(purged)}** messages that had all caps in it.")
+            f"I have purged **{len(purged)}** messages that had all caps in it."
+        )
 
     @_purge.command(
         name="between",
@@ -277,17 +319,145 @@ class admin(commands.Cog):
         description="Purge an amount of messages that is between message **1** and message **2**",
     )
     @commands.has_permissions(manage_messages=True)
-    async def _between(self, ctx, message1:discord.Message,message2:discord.Message):
+    async def _between(self, ctx, message1: discord.Message, message2: discord.Message):
         try:
-            purged = await ctx.channel.purge(before=message2,after=message1)
+            purged = await ctx.channel.purge(before=message2, after=message1)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
             )
 
         await ctx.channel.send(
-            f"I have purged **{len(purged)}** messages that were between {message1.id} and {message2.id}")
+            f"I have purged **{len(purged)}** messages that were between {message1.id} and {message2.id}"
+        )
 
+    @_purge.command(
+        name="system",
+        usage="(amount)",
+        description="Purge an amount of message that were sent by system",
+    )
+    @commands.has_permissions(manage_messages=True)
+    async def _system(self, ctx, amount: int):
+        def is_system(m):
+            return m.is_system()
+
+        try:
+            purged = await ctx.channel.purge(limit=int(amount), check=is_system)
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(
+            f"I have purged **{len(purged)}** messages that were from system!"
+        )
+
+    @_purge.command(
+        name="newusers",
+        usage="(amount)",
+        description="Purge an amount of message that were sent by new users",
+    )
+    @commands.has_permissions(manage_messages=True)
+    async def _newusers(self, ctx, amount: int):
+        def is_new(m):
+            return m.author.joined_at > m.author.joined_at + datetime.timedelta(
+                minutes=60
+            )
+
+        try:
+            purged = await ctx.channel.purge(limit=int(amount), check=is_new)
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(
+            f"I have purged **{len(purged)}** messages that were from users who recently joined!"
+        )
+
+    @_purge.command(
+        name="attachments",
+        usage="(amount)",
+        description="Purge an amount of message that have attachments with them",
+    )
+    @commands.has_permissions(manage_messages=True)
+    async def _attachments(self, ctx, amount: int):
+        def has_attachments(m):
+            return m.attachments
+
+        try:
+            purged = await ctx.channel.purge(limit=int(amount), check=has_attachments)
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(
+            f"I have purged **{len(purged)}** messages that had attachments!"
+        )
+
+    @_purge.command(
+        name="noroles",
+        usage="(amount)",
+        description="Purge an amount of message that the author has no roles",
+    )
+    @commands.has_permissions(manage_messages=True)
+    async def _noroles(self, ctx, amount: int):
+        def has_no_roles(m):
+            return m.author.roles == [ctx.guild.default_role]
+
+        try:
+            purged = await ctx.channel.purge(limit=int(amount), check=has_no_roles)
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(
+            f"I have purged **{len(purged)}** messages where the author had no roles!"
+        )
+
+    @_purge.command(
+        name="nonembeds",
+        usage="(amount)",
+        description="Purge an amount of message that dont have any embed(s)",
+    )
+    @commands.has_permissions(manage_messages=True)
+    async def _nonembeds(self, ctx, amount: int):
+        def has_no_embeds(m):
+            return not m.embeds
+
+        try:
+            purged = await ctx.channel.purge(limit=int(amount), check=has_no_embeds)
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(
+            f"I have purged **{len(purged)}** messages that didn't have an embed"
+        )
+
+    @_purge.command(
+        name="unpinned",
+        usage="(amount)",
+        description="Purge an amount of message that aren't pinned",
+    )
+    @commands.has_permissions(manage_messages=True)
+    async def _unpinned(self, ctx, amount: int):
+        def not_pinned(m):
+            return not m.pinned
+
+        try:
+            purged = await ctx.channel.purge(limit=int(amount), check=not_pinned)
+        except Exception as err:
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
+
+        await ctx.channel.send(
+            f"I have purged **{len(purged)}** messages that weren't pinned"
+        )
 
     @commands.group(
         name="archive",
@@ -585,13 +755,17 @@ class admin(commands.Cog):
     @commands.command(
         name="post",
         usage="#channel @role <message>",
-        description="Send a message to a channel that pings a role. Gotta be sneky"
+        description="Send a message to a channel that pings a role. Gotta be sneky",
     )
     @commands.has_permissions(administrator=True)
-    async def _post(self,ctx,channel:discord.TextChannel,role:discord.Role,*,message):
+    async def _post(
+        self, ctx, channel: discord.TextChannel, role: discord.Role, *, message
+    ):
 
         try:
-            await channel.send(f"{role.mention}\n\n{message}\n\n*Message by: {ctx.author}*")
+            await channel.send(
+                f"{role.mention}\n\n{message}\n\n*Message by: {ctx.author}*"
+            )
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -599,32 +773,37 @@ class admin(commands.Cog):
 
         await ctx.channel.send(":ok_hand:")
 
-    @commands.group(name="role",invoke_without_command=True,description="Manage your server's roles with my many commands :)",aliases=['roles'])
+    @commands.group(
+        name="role",
+        invoke_without_command=True,
+        description="Manage your server's roles with my many commands :)",
+        aliases=["roles"],
+    )
     @commands.has_permissions(manage_roles=True)
-    async def _role(self,ctx):
+    async def _role(self, ctx):
 
         list = []
         length = [round(len(ctx.channel.guild.roles) / 1)]
         pages = []
         for x in ctx.channel.guild.roles:
-            list.append(f"**{x.mention}**: `{x.id}`")    
+            list.append(f"**{x.mention}**: `{x.id}`")
 
-        Output = [list[x - y: x] for x, y in zip(accumulate(length), length)]         
-        
+        Output = [list[x - y : x] for x, y in zip(accumulate(length), length)]
+
         for x in Output:
-            embed = discord.Embed(color=0x99AAB5,description='\n '.join(x))
+            embed = discord.Embed(color=0x99AAB5, description="\n ".join(x))
             pages.append(embed)
-        
+
         paginator = pagination.BotEmbedPaginator(ctx, pages)
-        return await paginator.run()        
+        return await paginator.run()
 
-
-    @_role.command(name="add",
+    @_role.command(
+        name="add",
         usage="@user (role)",
         description="Add a role to a user on the fly. If the role you are trying to add is above you, it wont respond.",
     )
     @commands.has_permissions(manage_roles=True)
-    async def _add(self, ctx, user: discord.Member, *, role:discord.Role):
+    async def _add(self, ctx, user: discord.Member, *, role: discord.Role):
 
         if checks.above(self=self.bot, user=user, moderator=ctx.author) is False:
             return await ctx.channel.send(
@@ -654,9 +833,7 @@ class admin(commands.Cog):
         description="Remove a role from a user on the fly. If the role you are trying to add is above you, it wont respond.",
     )
     @commands.has_permissions(manage_roles=True)
-    async def _remove(self, ctx, user: discord.Member, *, role:discord.Role):
-
-
+    async def _remove(self, ctx, user: discord.Member, *, role: discord.Role):
 
         if checks.above(self=self.bot, user=user, moderator=ctx.author) is False:
             return await ctx.channel.send(
@@ -677,7 +854,7 @@ class admin(commands.Cog):
             f"Okay, I removed the role {role.mention} from {user}, happy?",
             allowed_mentions=discord.AllowedMentions(
                 everyone=False, roles=False, users=False
-            )
+            ),
         )
 
     @_role.command(
@@ -686,9 +863,7 @@ class admin(commands.Cog):
         description="Add a role to all users in your server. *May take some time.*",
     )
     @commands.has_permissions(administrator=True)
-    async def _all(self, ctx, role:discord.Role):
-
-
+    async def _all(self, ctx, role: discord.Role):
 
         try:
             count = 0
@@ -713,9 +888,7 @@ class admin(commands.Cog):
         description="Remove a role from everyone **WITH** the role.",
     )
     @commands.has_permissions(administrator=True)
-    async def _nuke(self, ctx, role:discord.Role):
-
-
+    async def _nuke(self, ctx, role: discord.Role):
 
         try:
             count = 0
@@ -733,15 +906,23 @@ class admin(commands.Cog):
                 everyone=False, roles=False, users=False
             ),
         )
-    
-    @_role.command(name="create",usage="(name)",description="Create a role on your server, great for lazy people")
+
+    @_role.command(
+        name="create",
+        usage="(name)",
+        description="Create a role on your server, great for lazy people",
+    )
     @commands.has_permissions(administrator=True)
-    async def _create(self, ctx, *, name:str):    
+    async def _create(self, ctx, *, name: str):
         if len(name) > 30:
-            return await ctx.channel.send("Okay smart guy, want me to get introuble? Your names cant be over **30** characters")
+            return await ctx.channel.send(
+                "Okay smart guy, want me to get introuble? Your names cant be over **30** characters"
+            )
 
         try:
-            await ctx.guild.create_role(name=name,reason=f"Role create by {ctx.author}")
+            await ctx.guild.create_role(
+                name=name, reason=f"Role create by {ctx.author}"
+            )
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -749,11 +930,13 @@ class admin(commands.Cog):
 
         await ctx.channel.send(":ok_hand:")
 
-    @_role.command(name="delete",usage="@role",description="Swiftly delete a role from your server!!!!!")
+    @_role.command(
+        name="delete",
+        usage="@role",
+        description="Swiftly delete a role from your server!!!!!",
+    )
     @commands.has_permissions(administrator=True)
-    async def _delete(self, ctx, *, role:discord.Role):    
-
-
+    async def _delete(self, ctx, *, role: discord.Role):
 
         try:
             await role.delete(reason=f"Role deleted by {ctx.author}")
@@ -764,64 +947,77 @@ class admin(commands.Cog):
 
         await ctx.channel.send(":ok_hand:")
 
-    @_role.command(name="id",usage="@role",description="Get the id of a role")
-    async def _id(self, ctx, *, role:discord.Role): 
+    @_role.command(name="id", usage="@role", description="Get the id of a role")
+    async def _id(self, ctx, *, role: discord.Role):
 
+        try:
+            await ctx.channel.send(
+                f"**{role.mention}'s** id is `{role.id}`",
+                allowed_mentions=discord.AllowedMentions(
+                    everyone=False, roles=False, users=False
+                ),
+            )
 
-
-        try:   
-            await ctx.channel.send(f"**{role.mention}'s** id is `{role.id}`",
-            allowed_mentions=discord.AllowedMentions(
-                everyone=False, roles=False, users=False
-            ),
-        )
-    
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
             )
-    
-    @_role.command(name="color",usage="@role",description="Get the color of a role")
-    async def _color(self, ctx, *, role): 
 
-        try:   
-            await ctx.channel.send(f"**{role.mention}'s** color is `{role.color}`",
-            allowed_mentions=discord.AllowedMentions(
-                everyone=False, roles=False, users=False
-            ),
-        )
+    @_role.command(name="color", usage="@role", description="Get the color of a role")
+    async def _color(self, ctx, *, role):
+
+        try:
+            await ctx.channel.send(
+                f"**{role.mention}'s** color is `{role.color}`",
+                allowed_mentions=discord.AllowedMentions(
+                    everyone=False, roles=False, users=False
+                ),
+            )
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
-            )    
-    
-    @_role.command(name="memberids",usage="@role",description="Get all member's ids who are in a role.",aliases=['roleids'])
+            )
+
+    @_role.command(
+        name="memberids",
+        usage="@role",
+        description="Get all member's ids who are in a role.",
+        aliases=["roleids"],
+    )
     @commands.has_permissions(administrator=True)
-    async def _memberids(self, ctx, *, role:discord.Role):     
-        
+    async def _memberids(self, ctx, *, role: discord.Role):
+
         list = []
         length = [round(len(role.members) / 1)]
         pages = []
         for x in role.members:
-            list.append(f"**{x.mention}**: `{x.id}`")    
+            list.append(f"**{x.mention}**: `{x.id}`")
 
-        Output = [list[x - y: x] for x, y in zip(accumulate(length), length)]         
-        
+        Output = [list[x - y : x] for x, y in zip(accumulate(length), length)]
+
         for x in Output:
-            embed = discord.Embed(color=0x99AAB5,description='\n '.join(x))
+            embed = discord.Embed(color=0x99AAB5, description="\n ".join(x))
             pages.append(embed)
-        
-        paginator = pagination.BotEmbedPaginator(ctx, pages)
-        return await paginator.run()        
 
-    @commands.group(name="channel",description="Manage your server's channels with cool :sunglasses: options",invoke_without_command=True)
+        paginator = pagination.BotEmbedPaginator(ctx, pages)
+        return await paginator.run()
+
+    @commands.group(
+        name="channel",
+        description="Manage your server's channels with cool :sunglasses: options",
+        invoke_without_command=True,
+    )
     @commands.has_permissions(manage_channels=True)
-    async def _channel(self,ctx):
+    async def _channel(self, ctx):
         return
 
-    @_channel.command(name="lock",usage="<channel>",description="Lock a channel so users can't speak in it.")
+    @_channel.command(
+        name="lock",
+        usage="<channel>",
+        description="Lock a channel so users can't speak in it.",
+    )
     @commands.has_permissions(manage_channels=True)
-    async def _lock(self, ctx, *,channel:discord.TextChannel=None):    
+    async def _lock(self, ctx, *, channel: discord.TextChannel = None):
 
         if channel is None:
             channel = ctx.channel
@@ -830,15 +1026,25 @@ class admin(commands.Cog):
         perms.send_messages = False
 
         try:
-            await channel.set_permissions(ctx.guild.default_role, overwrite=perms, reason=f"[{ctx.author}]: channel lock ({channel.name})")            
+            await channel.set_permissions(
+                ctx.guild.default_role,
+                overwrite=perms,
+                reason=f"[{ctx.author}]: channel lock ({channel.name})",
+            )
         except Exception as err:
-            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
 
         await ctx.channel.send("🔒 channel locked!")
 
-    @_channel.command(name="unlock",usage="<channel>",description="These will revert changes from lock. Make sure that the role has send messages otherwise this wont change anything")
+    @_channel.command(
+        name="unlock",
+        usage="<channel>",
+        description="These will revert changes from lock. Make sure that the role has send messages otherwise this wont change anything",
+    )
     @commands.has_permissions(manage_channels=True)
-    async def _unlock(self, ctx, *,channel:discord.TextChannel=None):    
+    async def _unlock(self, ctx, *, channel: discord.TextChannel = None):
 
         if channel is None:
             channel = ctx.channel
@@ -847,15 +1053,25 @@ class admin(commands.Cog):
         perms.send_messages = None
 
         try:
-            await channel.set_permissions(ctx.guild.default_role, overwrite=perms, reason=f"[{ctx.author}]: channel unlock ({channel.name})")            
+            await channel.set_permissions(
+                ctx.guild.default_role,
+                overwrite=perms,
+                reason=f"[{ctx.author}]: channel unlock ({channel.name})",
+            )
         except Exception as err:
-            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
 
         await ctx.channel.send("🔓 channel unlocked!")
 
-    @_channel.command(name="voicelock",usage="<channel>",description="Lock a channel so users can't speak in it.")
+    @_channel.command(
+        name="voicelock",
+        usage="<channel>",
+        description="Lock a channel so users can't speak in it.",
+    )
     @commands.has_permissions(manage_channels=True)
-    async def _voicelock(self, ctx, *,channel:discord.VoiceChannel=None):    
+    async def _voicelock(self, ctx, *, channel: discord.VoiceChannel = None):
 
         if channel is None:
             channel = ctx.channel
@@ -864,15 +1080,25 @@ class admin(commands.Cog):
         perms.connect = False
 
         try:
-            await channel.set_permissions(ctx.guild.default_role, overwrite=perms, reason=f"[{ctx.author}]: voice channel lock ({channel.name})")            
+            await channel.set_permissions(
+                ctx.guild.default_role,
+                overwrite=perms,
+                reason=f"[{ctx.author}]: voice channel lock ({channel.name})",
+            )
         except Exception as err:
-            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
 
         await ctx.channel.send("🔈🔒 channel locked!")
 
-    @_channel.command(name="voiceunlock",usage="<channel>",description="Allow users back into a previously locked voice channel.")
+    @_channel.command(
+        name="voiceunlock",
+        usage="<channel>",
+        description="Allow users back into a previously locked voice channel.",
+    )
     @commands.has_permissions(manage_channels=True)
-    async def _voiceunlock(self, ctx, *,channel:discord.VoiceChannel=None):    
+    async def _voiceunlock(self, ctx, *, channel: discord.VoiceChannel = None):
 
         if channel is None:
             channel = ctx.channel
@@ -881,15 +1107,25 @@ class admin(commands.Cog):
         perms.connect = None
 
         try:
-            await channel.set_permissions(ctx.guild.default_role, overwrite=perms, reason=f"[{ctx.author}]: voice channel unlock ({channel.name})")            
+            await channel.set_permissions(
+                ctx.guild.default_role,
+                overwrite=perms,
+                reason=f"[{ctx.author}]: voice channel unlock ({channel.name})",
+            )
         except Exception as err:
-            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
 
         await ctx.channel.send("🔊🔓 channel unlocked!")
-    
-    @_channel.command(name="hide",usage="<channel>",description="Hide a channel from `@everyone`'s peeping eyes :eyes:")
+
+    @_channel.command(
+        name="hide",
+        usage="<channel>",
+        description="Hide a channel from `@everyone`'s peeping eyes :eyes:",
+    )
     @commands.has_permissions(manage_channels=True)
-    async def _hide(self, ctx, *,channel:discord.TextChannel=None):    
+    async def _hide(self, ctx, *, channel: discord.TextChannel = None):
 
         if channel is None:
             channel = ctx.channel
@@ -898,15 +1134,27 @@ class admin(commands.Cog):
         perms.view_channel = False
 
         try:
-            await channel.set_permissions(ctx.guild.default_role, overwrite=perms, reason=f"[{ctx.author}]: channel hide ({channel.name})")            
+            await channel.set_permissions(
+                ctx.guild.default_role,
+                overwrite=perms,
+                reason=f"[{ctx.author}]: channel hide ({channel.name})",
+            )
         except Exception as err:
-            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
 
-        await ctx.channel.send("👀 channel now hidden! *If the user was viewing the channel while you ran the command they can still see it*")
+        await ctx.channel.send(
+            "👀 channel now hidden! *If the user was viewing the channel while you ran the command they can still see it*"
+        )
 
-    @_channel.command(name="unhide",usage="<channel>",description="Give `@everyone` permission to see the channel again like a good owner")
+    @_channel.command(
+        name="unhide",
+        usage="<channel>",
+        description="Give `@everyone` permission to see the channel again like a good owner",
+    )
     @commands.has_permissions(manage_channels=True)
-    async def _unhide(self, ctx, *,channel:discord.TextChannel=None):    
+    async def _unhide(self, ctx, *, channel: discord.TextChannel = None):
 
         if channel is None:
             channel = ctx.channel
@@ -915,15 +1163,25 @@ class admin(commands.Cog):
         perms.view_channel = None
 
         try:
-            await channel.set_permissions(ctx.guild.default_role, overwrite=perms, reason=f"[{ctx.author}]: channel hide ({channel.name})")            
+            await channel.set_permissions(
+                ctx.guild.default_role,
+                overwrite=perms,
+                reason=f"[{ctx.author}]: channel hide ({channel.name})",
+            )
         except Exception as err:
-            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
 
         await ctx.channel.send("👀 channel now visible!")
 
-    @_channel.command(name="voicehide",usage="<channel>",description="Hide a channel from `@everyone`'s peeping eyes :eyes: **(Voice Edition)**")
+    @_channel.command(
+        name="voicehide",
+        usage="<channel>",
+        description="Hide a channel from `@everyone`'s peeping eyes :eyes: **(Voice Edition)**",
+    )
     @commands.has_permissions(manage_channels=True)
-    async def _voicehide(self, ctx, *,channel:discord.VoiceChannel=None):    
+    async def _voicehide(self, ctx, *, channel: discord.VoiceChannel = None):
 
         if channel is None:
             channel = ctx.channel
@@ -932,15 +1190,27 @@ class admin(commands.Cog):
         perms.view_channel = False
 
         try:
-            await channel.set_permissions(ctx.guild.default_role, overwrite=perms, reason=f"[{ctx.author}]: channel hide ({channel.name})")            
+            await channel.set_permissions(
+                ctx.guild.default_role,
+                overwrite=perms,
+                reason=f"[{ctx.author}]: channel hide ({channel.name})",
+            )
         except Exception as err:
-            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
 
-        await ctx.channel.send("👀 channel now hidden! *If the user was in the channel while it was being hidden they can stil see it.*")
+        await ctx.channel.send(
+            "👀 channel now hidden! *If the user was in the channel while it was being hidden they can stil see it.*"
+        )
 
-    @_channel.command(name="voiceunhide",usage="<channel>",description="Give `@everyone` permission to see the channel again like a good owner **(Voice Edition)**")
+    @_channel.command(
+        name="voiceunhide",
+        usage="<channel>",
+        description="Give `@everyone` permission to see the channel again like a good owner **(Voice Edition)**",
+    )
     @commands.has_permissions(manage_channels=True)
-    async def _voiceunhide(self, ctx, *,channel:discord.VoiceChannel):    
+    async def _voiceunhide(self, ctx, *, channel: discord.VoiceChannel):
 
         if channel is None:
             channel = ctx.channel
@@ -949,20 +1219,30 @@ class admin(commands.Cog):
         perms.view_channel = None
 
         try:
-            await channel.set_permissions(ctx.guild.default_role, overwrite=perms, reason=f"[{ctx.author}]: channel hide ({channel.name})")            
+            await channel.set_permissions(
+                ctx.guild.default_role,
+                overwrite=perms,
+                reason=f"[{ctx.author}]: channel hide ({channel.name})",
+            )
         except Exception as err:
-            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
 
         await ctx.channel.send("👀 channel now visible!")
 
-    @commands.group(name="noroles",description="View my commands for more info you cutie <3")
-    async def _noroles(self,ctx):
-        return   
+    @commands.group(
+        name="noroles", description="View my commands for more info you cutie <3"
+    )
+    async def _noroles(self, ctx):
+        return
 
-    @_noroles.command(name="show",description="Shows all users without a role in your server")
+    @_noroles.command(
+        name="show", description="Shows all users without a role in your server"
+    )
     @commands.has_permissions(manage_roles=True)
-    async def _noroles_show(self,ctx):    
-        
+    async def _noroles_show(self, ctx):
+
         list = []
         for x in ctx.guild.members:
             if x.roles == [ctx.guild.default_role]:
@@ -970,50 +1250,150 @@ class admin(commands.Cog):
         length = [round(len(list) / 1)]
         pages = []
 
-        Output = [list[x - y: x] for x, y in zip(accumulate(length), length)]         
-        
-        for x in Output:
-            embed = discord.Embed(color=0x99AAB5,description='\n '.join(f'**{x.mention}**: `{x.id}`' for x in x))
-            pages.append(embed)
-        
-        paginator = pagination.BotEmbedPaginator(ctx, pages)
-        return await paginator.run()        
+        Output = [list[x - y : x] for x, y in zip(accumulate(length), length)]
 
-    @_noroles.command(name="prune",description="Removes all users from your server with no role.")
+        for x in Output:
+            embed = discord.Embed(
+                color=0x99AAB5,
+                description="\n ".join(f"**{x.mention}**: `{x.id}`" for x in x),
+            )
+            pages.append(embed)
+
+        paginator = pagination.BotEmbedPaginator(ctx, pages)
+        return await paginator.run()
+
+    @_noroles.command(
+        name="prune", description="Removes all users from your server with no role."
+    )
     @commands.has_permissions(manage_roles=True)
-    async def _noroles_prune(self,ctx):    
-        
+    async def _noroles_prune(self, ctx):
+
         list = []
         for x in ctx.guild.members:
             if x.roles == [ctx.guild.default_role]:
                 list.append(x)
-        
+
         for x in list:
             try:
                 await x.kick(reason=f"Auto kick: User has no roles.")
             except Exception as err:
-                return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
 
-        await ctx.channel.send(f":ok_hand: {len(list)} users have been kicked!\n**Users kicked:**\n{', '.join(f'{x}' for x in list)}")
+        await ctx.channel.send(
+            f":ok_hand: {len(list)} users have been kicked!\n**Users kicked:**\n{', '.join(f'{x}' for x in list)}"
+        )
 
-    @commands.command(name="config",description="Check your server's config.")
+    @commands.command(name="config", description="Check your server's config.")
     @commands.has_permissions(manage_guild=True)
-    async def _config(self,ctx):    
+    async def _config(self, ctx):
         async with self.bot.pool.acquire() as conn:
-            guild = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+            guild = await conn.fetchrow(
+                "SELECT * FROM guilds WHERE id = $1", ctx.channel.guild.id
+            )
 
-            embed = discord.Embed(color=0x99AAB5,description=dedent(f"""
-            Prefix           : {guild['prefix']}
-            Mod Role         : <@&{guild['modrole']}>
-            Mute Role        : <@&{guild['muterole']}>
-            Don't mute role  : <@&{guild['dontmute']}>
-            Anti Profanity   : {f"True: {guild['antiprofanity']}" if guild['antiprofanity'] else "False"}
-            Anti Hoist       : {guild['antihoist']}
-            Anti Invite      : {f"True: {guild['antiprofanity']}" if guild['antinvite'] else "False"}
-            """))
-            embed.set_author(name=ctx.channel.guild,icon_url=ctx.channel.guild.icon_url)
-            embed.set_thumbnail(url=ctx.channel.guild.icon_url)
+            await ctx.channel.send(
+                dedent(
+                    f"""
+            ```json
+            {{
+                "prefix": "{guild['prefix']}",
+                "archive category": {guild['archive_category']}, 
+                "moderation": {{
+                    "moderator role": {guild['modrole']},
+                    "don't mute role": {guild['dontmute']},
+                    "muted role": {guild['muterole']},
+                }},
+                "auto-moderation": {{
+                    "anti profanity": {f"Action: {guild['antiprofanity']}" if guild['antiprofanity'] else "False"},
+                    "anti hoisting": {guild['antihoist']},
+                    "anti invite": {f"Action: {guild['antiprofanity']}" if guild['antinvite'] else "False"},
+                    "anti massping": Not for the public,
+                    "anti raid": Not for the public,
+                }},
+                "logging": {{
+                    "mod logs": {guild['modlogs']},
+                    "message logs": {guild['messagelogs']},
+                    "automod logs": {guild['automodlogs']},
+                    "user logs": {guild['userlogs']},
+                    "server logs": {guild['serverlogs']},
+                }}
+            }}
+            ```
+            """
+                )
+            )
 
-            await ctx.channel.send(embed=embed)
-def setup(bot): 
+    @commands.command(
+        name="archivem",
+        usage="<#channel>",
+        description="Archive a channel and move it to your server's archive category",
+    )
+    @commands.has_permissions(manage_channels=True)
+    async def _archivem(
+        self,
+        ctx,
+        channel: typing.Union[discord.TextChannel, discord.VoiceChannel],
+        *,
+        reason=None,
+    ):
+        async with self.bot.pool.acquire() as conn:
+            guild = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1", ctx.channel.guild.id)
+            archives = await conn.fetchrow("SELECT * FROM archived_channels WHERE channel = $1", channel.id)
+
+            if archives:
+                return await ctx.channel.send("Stop 🛑 That channel is already archived!")
+
+            if not guild["archive_category"]:
+                return await ctx.channel.send(
+                    f"On no! Where do I send the channel to? Run `{ctx.prefix}archivecategory <category id>` so I know where to send it!!!"
+                )
+            
+
+            try:
+                await conn.execute(
+                    "INSERT INTO archived_channels(category,channel,position) VALUES($1,$2,$3)",
+                    channel.category_id,
+                    channel.id,
+                    channel.position,
+                )
+                await channel.edit(
+                    category=ctx.guild.get_channel(guild["archive_category"]),
+                    reason=f"[ Channel Archive by {ctx.author} ] {reason}",
+                )
+                if channel.type == discord.ChannelType.text:
+                    await channel.send(
+                        embed=discord.Embed(
+                            description=f"""Channel archived by {ctx.author}\n\n{f"{reason[:1900]}" if reason is not None else ""}""",
+                            timestamp=datetime.utcnow(),
+                        )
+                    )
+
+            except Exception as err:
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
+            await ctx.channel.send(f"Ok I have archived {channel.mention}!!!!!!")
+
+    @commands.command(name="returnc",usage="<#channel>",description="Return a previously archived channel to its original posistion. :warning: If the category is was in was deleted the channel will will be put in not category.")
+    @commands.has_permissions(manage_channels=True)
+    async def _returnc(self,ctx,channel: typing.Union[discord.TextChannel, discord.VoiceChannel],*,reason=None,):    
+        async with self.bot.pool.acquire() as conn:
+            archived_channel = await conn.fetchrow("SELECT * FROM archived_channels WHERE channel = $1",channel.id)
+
+            if not archived_channel:
+                return await ctx.channel.send("Stop 🛑 That channel is **not** archived!! What are you thinking????")
+            
+            try:
+                await channel.edit(category=ctx.guild.get_channel(archived_channel['category']),position=archived_channel['position'])
+                await conn.execute("DELETE FROM archived_channels WHERE id = $1",archived_channel['id'])
+            except Exception as err:
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
+
+            await ctx.channel.send(f"{channel.mention} has been returned to its rightful place!")
+
+def setup(bot):
     bot.add_cog(admin(bot))
