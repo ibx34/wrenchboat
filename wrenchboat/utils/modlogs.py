@@ -95,6 +95,16 @@ modlogs_messages = {
         """
         )
     },
+    "Warnn": {
+        "message": dedent(
+            """ 
+        **Warn** | Case {case}
+        **User**: {user} ({user_id}) ({user_mention})
+        **Reason**: {reason}
+        **Moderator**: {moderator}
+        """
+        )
+    },
     "Softban": {
         "message": dedent(
             """ 
@@ -145,7 +155,7 @@ class modlog_related:
         async with self.pool.acquire() as conn:
             try:
                 await conn.execute(
-                    "INSERT INTO infractions(target,moderator,reason,id,time_punsihed,type,modlogs) VALUES($1,$2,$3,$4,$5,$6,$7)",
+                    "INSERT INTO infractions(target,moderator,reason,id,time_punsihed,type,modlogs,guild) VALUES($1,$2,$3,$4,$5,$6,$7,$8)",
                     self.user.id,
                     self.moderator.id,
                     self.reason,
@@ -153,6 +163,7 @@ class modlog_related:
                     self.time,
                     self.type,
                     self.modlogs,
+                    self.user.guild.id
                 )
             except Exception as err:
                 print(err)
