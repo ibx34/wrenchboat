@@ -6,12 +6,11 @@ import sys
 import aiohttp
 import aioredis
 import asyncpg
-import discord
+import discord 
 from discord.ext import commands
 
 import collections
 import config
-
 
 class WrenchBoat(commands.Bot):
     def __init__(self):
@@ -31,7 +30,7 @@ class WrenchBoat(commands.Bot):
                 guild_reactions=True,
                 dm_reactions=True,
                 voice_states=True,
-                presences=True
+                presences=True,
             ),
         )
         self.config = config
@@ -39,49 +38,84 @@ class WrenchBoat(commands.Bot):
         self.pool = None
         self.redis = None
         self.used = 0
-
-        # Used within the bot's ins / outs
         self.prefixes = {}
         self.automod = {}
         self.muteroles = {}
-        # self.antihoist = {} NOTE: This was moved to 'self.automod' aswell as all other auto moderation actions.
         self.modlog_channel = {}
+        self.logging = {}
         self.highlights = {}
         self.cases = collections.defaultdict(lambda: 0)
 
     async def get_pre(self, bot, message):
 
-        return commands.when_mentioned_or(*config.prefix)(bot, message)#(config.prefix)(bot, message)
+        return commands.when_mentioned_or(*config.prefix)(bot, message)
 
     async def start(self):
         self.session = aiohttp.ClientSession(loop=self.loop)
-        for ext in config.extensions:
-            try:
-                self.load_extension(f"{ext}")
-            except Exception as e:
-                print(f"Failed to load {ext}, {e}")
 
         await super().start(config.token)
 
     async def on_ready(self):
         self.pool = await asyncpg.create_pool(**self.config.db, max_size=150)
-        self.redis = await aioredis.create_redis_pool("redis://localhost", loop=self.loop)
+        self.redis = await aioredis.create_redis_pool(
+            "redis://localhost", loop=self.loop
+        )
 
         self.guild = self.get_guild(config.guild)
         self.modlogs = self.guild.get_channel(config.modlogs)
 
         for i in await self.pool.fetch("SELECT * FROM guilds"):
-            self.prefixes[i['id']] = i['prefix']
-            # self.antihoist[i['id']] = i['antihoist']
-            self.modlog_channel[i['id']] = i['modlogs']
-            self.automod[i['id']] = {"antihoist": i['antihoist'], "antinvite": i['antinvite']}
-            if i['antiprofanity'] in ['ban','kick','delete','mute']:
-                self.automod[i['id']]['antiprofanity'] = i['antiprofanity']
+            """
+            General Caching
+            """
+
+            self.prefixes[i["id"]] = i["prefix"]
+            self.modlog_channel[i["id"]] = i["modlogs"]
+
+            """
+            Automod Caching
+            """
+            self.automod[i["id"]] = {"antihoist": i["antihoist"]}
+            self.automod[i["id"]]["antinvite"] = (
+                i["antinvite"]
+                if i["antinvite"] in ["ban", "kick", "delete", "mute"]
+                else None
+            )
+            self.automod[i["id"]]["antimassping"] = (
+                i["antimassping"]
+                if i["antimassping"] in ["ban", "kick", "delete", "mute"]
+                else None
+            )
+            self.automod[i["id"]]["antiprofanity"] = (
+                i["antiprofanity"]
+                if i["antiprofanity"] in ["ban", "kick", "delete", "mute"]
+                else None
+            )
+            self.automod[i["id"]]["antiraid"] = (
+                {
+                    "count": i["antiraid"].split(":")[0],
+                    "action": i["antiraid"].split(":")[1],
+                }
+                if i["antiraid"]
+                else None
+            )
+
+            """
+            Logging Caching
+            """
+
+            self.logging[i["id"]] = {"message_logs": i["messagelogs"],"server_logs": i["serverlogs"],"user_logs": i["userlogs"],"automod_logs": i["automodlogs"]}
+
+
 
         for i in await self.pool.fetch("SELECT * FROM infractions ORDER BY id DESC"):
-            self.cases[i['guild']] = i['id']
+            self.cases[i["guild"]] = i["id"]
         for i in await self.pool.fetch("SELECT * FROM highlights"):
-            self.highlights[i['id']] = {"phrase": i['phrase'], "author": i['author'], "guild": i['guild']}
+            self.highlights[i["id"]] = {
+                "phrase": i["phrase"],
+                "author": i["author"],
+                "guild": i["guild"],
+            }
 
         try:
             with open("wrenchboat/utils/schema.sql") as f:
@@ -89,7 +123,17 @@ class WrenchBoat(commands.Bot):
         except Exception as e:
             print(f"Error in schema:\n{e}")
 
-        await self.change_presence(status=discord.Status.online,activity=discord.Game("with wrenches"))
+        await self.change_presence(
+            status=discord.Status.online, activity=discord.Game("with wrenches")
+        )
+        print("Bot started loading modules")
+        
+        for ext in config.extensions:
+            try:
+                self.load_extension(f"{ext}")
+            except Exception as e:
+                print(f"Failed to load {ext}, {e}")
+
         print(f"Bot started. Guilds: {len(self.guilds)} Users: {len(self.users)}")
 
     async def on_message(self, message):
@@ -103,20 +147,31 @@ class WrenchBoat(commands.Bot):
             await self.process_commands(message, ctx)
 
     async def process_commands(self, message, ctx):
-        
+
         if ctx.command is None:
             return
 
         self.used += 1
         await self.invoke(ctx)
-    
+
     async def on_guild_join(self, guild):
-            
+
+        if guild.id not in config.guild_whitelist:
+            await guild.leave()
+
         try:
-            i = await self.pool.fetchrow("INSERT INTO guilds(id,prefix) VALUES($1,$2) RETURNING *", guild.id, "!w")
-            self.automod[i['id']] = {"antihoist": i['antihoist'], "antinvite": i['antinvite']}    
+            i = await self.pool.fetchrow(
+                "INSERT INTO guilds(id,prefix) VALUES($1,$2) RETURNING *",
+                guild.id,
+                "!w",
+            )
+            self.automod[i["id"]] = {
+                "antihoist": i["antihoist"],
+                "antinvite": i["antinvite"],
+            }
         except KeyError:
             pass
+
 
 if __name__ == "__main__":
     WrenchBoat().run()
