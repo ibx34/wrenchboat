@@ -7,13 +7,24 @@ IF NOT EXISTS guilds
     "muterole" BIGINT,
     "dontmute" BIGINT,
     "modlogs" BIGINT,
+    "messagelogs" BIGINT,
+    "userlogs" BIGINT,
+    "automodlogs" BIGINT,
+    "serverlogs" BIGINT,
+    "archive_category" BIGINT,
     "antiprofanity" VARCHAR,
     "antihoist" BOOLEAN DEFAULT FALSE, --VARCHAR
     "antinvite" VARCHAR, 
+    "antiraid" VARCHAR,
+    "antimassping" VARCHAR,
+    "antispam" VARCHAR,
+    "antiping" VARCHAR,
+    "antiemojispam" VARCHAR,
     "modrole" BIGINT,
     "starboard_channel" BIGINT,
     "needed_stars" BIGINT DEFAULT 3,
-    "self_starring" BOOLEAN DEFAULT FALSE
+    "self_starring" BOOLEAN DEFAULT FALSE,
+    "language" VARCHAR DEFAULT "en"
 );
 
 CREATE TABLE
@@ -80,4 +91,13 @@ IF NOT EXISTS notes
     "target" BIGINT,
     "content" VARCHAR,
     "time_given" TIMESTAMP
+);
+
+CREATE TABLE
+IF NOT EXISTS archived_channels 
+(
+    "id" SERIAL,
+    "channel" BIGINT,
+    "category" BIGINT,
+    "position" BIGINT
 )
