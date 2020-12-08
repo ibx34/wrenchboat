@@ -9,8 +9,10 @@ import asyncpg
 import discord 
 from discord.ext import commands
 
+import logging
 import collections
 import config
+from logger import logging
 
 class WrenchBoat(commands.Bot):
     def __init__(self):
@@ -45,6 +47,7 @@ class WrenchBoat(commands.Bot):
         self.logging = {}
         self.highlights = {}
         self.cases = collections.defaultdict(lambda: 0)
+        self.snips = {}
 
     async def get_pre(self, bot, message):
 
@@ -99,7 +102,8 @@ class WrenchBoat(commands.Bot):
                 if i["antiraid"]
                 else None
             )
-
+            self.automod[i['id']]['token_remover'] = i['token_remover']
+            
             """
             Logging Caching
             """
@@ -126,19 +130,23 @@ class WrenchBoat(commands.Bot):
         await self.change_presence(
             status=discord.Status.online, activity=discord.Game("with wrenches")
         )
-        print("Bot started loading modules")
+        logging.info("Bot started loading modules")
         
         for ext in config.extensions:
             try:
                 self.load_extension(f"{ext}")
             except Exception as e:
                 print(f"Failed to load {ext}, {e}")
+                logging.fail(ext)
 
-        print(f"Bot started. Guilds: {len(self.guilds)} Users: {len(self.users)}")
+        logging.info(f"Bot started. Guilds: {len(self.guilds)} Users: {len(self.users)}")
 
     async def on_message(self, message):
 
         if message.author.bot:
+            return
+        
+        if not message.guild:
             return
 
         ctx = await self.get_context(message)
