@@ -1,9 +1,10 @@
+from datetime import datetime
 from textwrap import dedent
 
 import config
 import discord
 from discord.ext import commands
-from datetime import datetime
+
 
 class _purge(commands.Cog):
     def __init__(self, bot):
@@ -22,7 +23,7 @@ class _purge(commands.Cog):
             return not m.pinned
 
         try:
-            purged = await ctx.channel.purge(limit=amount, check=is_pinned)
+            purged = await ctx.channel.purge(limit=amount+1, check=is_pinned)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -43,7 +44,7 @@ class _purge(commands.Cog):
             return m.author == user
 
         try:
-            purged = await ctx.channel.purge(limit=amount, check=is_x)
+            purged = await ctx.channel.purge(limit=amount+1, check=is_x)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -64,7 +65,7 @@ class _purge(commands.Cog):
             return m.author.bot
 
         try:
-            purged = await ctx.channel.purge(limit=amount, check=is_bot)
+            purged = await ctx.channel.purge(limit=amount+1, check=is_bot)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -85,7 +86,7 @@ class _purge(commands.Cog):
             return m.embeds
 
         try:
-            purged = await ctx.channel.purge(limit=amount, check=has_embed)
+            purged = await ctx.channel.purge(limit=amount+1, check=has_embed)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -106,7 +107,7 @@ class _purge(commands.Cog):
             return contains in m.content
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount), check=contains_x)
+            purged = await ctx.channel.purge(limit=int(amount)+1, check=contains_x)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -132,7 +133,7 @@ class _purge(commands.Cog):
                 return m.reactions
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount), check=has_reactions)
+            purged = await ctx.channel.purge(limit=int(amount)+1, check=has_reactions)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -157,7 +158,7 @@ class _purge(commands.Cog):
                 return m.mentions
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount), check=has_mentions)
+            purged = await ctx.channel.purge(limit=int(amount)+1, check=has_mentions)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -179,7 +180,7 @@ class _purge(commands.Cog):
             return m.content.upper() == m.content
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount), check=is_upper)
+            purged = await ctx.channel.purge(limit=int(amount)+1, check=is_upper)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -218,7 +219,7 @@ class _purge(commands.Cog):
             return m.is_system()
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount), check=is_system)
+            purged = await ctx.channel.purge(limit=int(amount)+1, check=is_system)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -241,7 +242,7 @@ class _purge(commands.Cog):
             )
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount), check=is_new)
+            purged = await ctx.channel.purge(limit=int(amount)+1, check=is_new)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -262,7 +263,7 @@ class _purge(commands.Cog):
             return m.attachments
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount), check=has_attachments)
+            purged = await ctx.channel.purge(limit=int(amount)+1, check=has_attachments)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -283,7 +284,7 @@ class _purge(commands.Cog):
             return m.author.roles == [ctx.guild.default_role]
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount), check=has_no_roles)
+            purged = await ctx.channel.purge(limit=int(amount)+1, check=has_no_roles)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -304,7 +305,7 @@ class _purge(commands.Cog):
             return not m.embeds
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount), check=has_no_embeds)
+            purged = await ctx.channel.purge(limit=int(amount)+1, check=has_no_embeds)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -325,7 +326,7 @@ class _purge(commands.Cog):
             return not m.pinned
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount), check=not_pinned)
+            purged = await ctx.channel.purge(limit=int(amount)+1, check=not_pinned)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -334,6 +335,6 @@ class _purge(commands.Cog):
         await ctx.channel.send(
             f"I have purged **{len(purged)}** messages that weren't pinned"
         )
-
+        
 def setup(bot):
     bot.add_cog(_purge(bot))
