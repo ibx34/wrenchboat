@@ -257,6 +257,34 @@ class infractions(commands.Cog):
         )
 
     @commands.command(
+        name="warnn",
+        usage="@user <reason>",
+        description="Warn a user and enforece what you need to. They are not notified.",
+    )
+    @commands.has_permissions(kick_members=True)
+    async def _warnn(
+        self,
+        ctx,
+        user: discord.Member,
+        *,
+        reason,
+    ):
+
+        if not checks.above(self.bot,user,ctx.author):
+            return
+
+        await ctx.channel.send(f"**{ctx.channel.guild}** | {ctx.author} warned {user} for Indefinitely. ({reason})")
+        await modlogs(
+            self=self.bot,
+            moderator=ctx.author,
+            user=user,
+            reason=reason,
+            type=ctx.command.name.capitalize(),
+            case=None,
+            time=datetime.utcnow(),
+        )
+
+    @commands.command(
         name="warn",
         usage="@user <reason>",
         description="Warn a user and enforece what you need to. I don't care :/",
@@ -307,6 +335,41 @@ class infractions(commands.Cog):
                 if dontmuterole in user.roles:
                     return await ctx.channel.send(f"Idiots some days. You can't mute {user}, they got the sepcial don't mute role.")
                 await user.add_roles(muterole)
+            except Exception as err:
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
+            
+            await ctx.channel.send(f"{user} has been muted. (Okay?)")
+            await modlogs(
+                self=self.bot,
+                moderator=ctx.author,
+                user=user,
+                reason=reason,
+                type=ctx.command.name.capitalize(),
+                case=None,
+                time=datetime.utcnow(),
+                role=muterole
+            )
+
+    @commands.command(name="supermute",usage="@user <reason>",description="Mute a user from **1.** speaking in voice channels and **2.** chatting in text channels")
+    @commands.has_permissions(manage_messages=True)
+    async def _supermute(self,ctx,user:discord.Member,*,reason="No reason provided. You can add a reason with `case <id> <reason>`.",):
+
+        if not checks.above(self.bot,user,ctx.author):
+            return
+
+        async with ctx.bot.pool.acquire() as conn:
+            mute = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+
+            try:
+                muterole = ctx.channel.guild.get_role(mute['muterole'])
+                dontmuterole = ctx.channel.guild.get_role(mute['dontmute'])
+
+                if dontmuterole in user.roles:
+                    return await ctx.channel.send(f"Idiots some days. You can't mute {user}, they got the sepcial don't mute role.")
+                await user.add_roles(muterole)
+                await user.edit(mute=True,reason=f"[Supermute by {ctx.author}]: {reason}")
             except Exception as err:
                 return await ctx.channel.send(
                     f"Don't expect me to know what happened >:)\n{err}"
@@ -592,6 +655,88 @@ class infractions(commands.Cog):
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
             )        
+
+    @commands.group(
+        name="note",
+        usage="@user <reason>",
+        description="Add a note to a user can be about literally anything.",
+        invoke_without_command=True
+    )
+    @commands.has_permissions(manage_messages=True)
+    async def _note(
+        self,
+        ctx,
+        user: discord.Member,
+        *,
+        reason,
+    ):
+
+        if not checks.above(self.bot,user,ctx.author):
+            return
+
+        try:
+            await self.bot.pool.execute(f"INSERT INTO notes(guild,author,target,content,time_given) VALUES($1,$2,$3,$4,$5)",ctx.channel.guild.id,ctx.author.id,user.id,reason,datetime.utcnow())
+        except Exception as err:
+            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")     
+
+        await ctx.channel.send(f"📋")
+    
+    @_note.command(name="nfo",usage="(note id)",description="Get info on a user's note. Grammar level - 100%")
+    @commands.has_permissions(manage_messages=True)
+    async def _note_nfo(self,ctx,id:int):
+
+        async with ctx.bot.pool.acquire() as conn:
+
+            selected = await conn.fetchrow("SELECT * FROM notes WHERE id = $1",id)
+
+            try:
+                await ctx.channel.send(dedent(f"""
+                📋 **{selected['id']}**
+                **User**: {await self.bot.fetch_user(selected['target'])} ({selected['target']}) (<@{selected['target']}>)
+                **Moderator**: {await self.bot.fetch_user(selected['author'])}
+                **Note**: {selected['content']}
+                """),allowed_mentions=discord.AllowedMentions(
+                everyone=False, roles=False, users=False
+            ),)
+            except Exception as err:
+                print(err)
+
+    @_note.command(name="delete",usage="(note id)",description="Delete a note with the matching id..")
+    @commands.has_permissions(manage_messages=True)
+    async def _note_delete(self,ctx,id:int):
+
+        async with ctx.bot.pool.acquire() as conn:
+            try:
+                await conn.fetchrow("DELETE FROM notes WHERE id = $1",id)
+            except Exception as err:
+                print(err)
+
+            await ctx.channel.send(":ok_hand:")
+
+    @_note.command(name="search",usage="(user)",description="Search for notes on a specific user")
+    @commands.has_permissions(manage_messages=True)
+    async def _note_search(self,ctx,user:discord.User):
+
+        async with ctx.bot.pool.acquire() as conn:
+            selected = await conn.fetch("SELECT * FROM notes WHERE guild = $1 AND target = $2",ctx.channel.guild.id,user.id)
+            if not selected:
+                return await ctx.channel.send("Nope! They are clean!!!!")
+            list = ""
+
+            try:
+                for x in selected:
+                    list += f"{x['id']}: {x['content']}"
+
+                if len(list) > 1700:
+                    await ctx.channel.send(f"""I am now showing you {user}'s notes!""")
+                    for i in range(math.ceil(len(list)/1992)):
+                        chunk = list[(i-1) *1700:i*1992]
+                        await ctx.channel.send(f'```\n{chunk}\n```')
+                else:
+                    await ctx.channel.send(f"""I am now showing you {user}'s notes!```{list}```""")
+            except Exception as err:
+                print(err)
+
 
 def setup(bot):
     bot.add_cog(infractions(bot))
