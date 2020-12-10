@@ -4,5 +4,3 @@
 # JOIN SUPPORT SERVER FOR MORE INFO
 
 [support server](https://discord.gg/q7Uq8TbYvr)
-
-Hi!
