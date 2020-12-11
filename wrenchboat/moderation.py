@@ -18,11 +18,12 @@ from discord.ext import commands
 from wrenchboat.utils import pagination
 from wrenchboat.utils.checks import checks
 from wrenchboat.utils.modlogs import modlogs
+import typing
 
 id = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
 
 
-class infractions(commands.Cog):
+class moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -352,6 +353,47 @@ class infractions(commands.Cog):
                 role=muterole
             )
 
+    @commands.command(name="hardmute",usage="@user <reason>",description="Remove a users role and add the muted role.")
+    @commands.has_permissions(manage_messages=True)
+    async def _hardmute(self,ctx,user:discord.Member,*,reason="No reason provided. You can add a reason with `case <id> <reason>`.",):
+
+        if not checks.above(self.bot,user,ctx.author):
+            return
+
+        async with ctx.bot.pool.acquire() as conn:
+            mute = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+
+            try:
+                muterole = ctx.channel.guild.get_role(mute['muterole'])
+                dontmuterole = ctx.channel.guild.get_role(mute['dontmute'])
+
+                if dontmuterole in user.roles:
+                    return await ctx.channel.send(f"Idiots some days. You can't mute {user}, they got the sepcial don't mute role.")
+                for x in user.roles:
+                    try:
+                        await user.remove_roles(x)
+                    except:
+                        continue
+                    
+                await user.add_roles(muterole)
+            except Exception as err:
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
+            
+            await ctx.channel.send(f"{user} has been muted. (Okay?)")
+            await modlogs(
+                self=self.bot,
+                moderator=ctx.author,
+                user=user,
+                reason=reason,
+                type=ctx.command.name.capitalize(),
+                case=None,
+                time=datetime.utcnow(),
+                role=muterole
+            )
+
+
     @commands.command(name="supermute",usage="@user <reason>",description="Mute a user from **1.** speaking in voice channels and **2.** chatting in text channels")
     @commands.has_permissions(manage_messages=True)
     async def _supermute(self,ctx,user:discord.Member,*,reason="No reason provided. You can add a reason with `case <id> <reason>`.",):
@@ -579,7 +621,7 @@ class infractions(commands.Cog):
 
             await ctx.channel.send(f"👌")     
 
-    @commands.group(name="servercases", description="Run help on me for all my commands.",invoke_without_command=True)
+    @commands.group(name="infractions", description="Run help on me for all my commands.",invoke_without_command=True)
     async def _infractions(self,ctx):
         return
 
@@ -739,4 +781,4 @@ class infractions(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(infractions(bot))
+    bot.add_cog(moderation(bot))
