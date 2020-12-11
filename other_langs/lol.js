@@ -1,1 +1,5 @@
-console.log("lol")
+const lol = true
+
+if (lol == true) {
+    console.log("lol");
+}
