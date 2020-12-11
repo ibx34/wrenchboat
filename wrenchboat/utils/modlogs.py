@@ -24,6 +24,28 @@ modlogs_messages = {
         """
         )
     },
+    "Hardmute": {  # Special Role Added
+        "message": dedent(
+            """
+        **Hardmute** | Case {case}
+        **User**: {user} ({user_id}) ({user_mention})
+        **Role**: {role} ({role_id})
+        **Reason**: {reason}
+        **Moderator**: {moderator}
+        """
+        )
+    },
+    "Supermute": {
+        "message": dedent(
+            """
+        **Supermute** | Case {case}
+        **User**: {user} ({user_id}) ({user_mention})
+        **Role**: {role} ({role_id})
+        **Reason**: {reason}
+        **Moderator**: {moderator}
+        """
+        )
+    },
     "Voicemute": {
         "message": dedent(
             """
