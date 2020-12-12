@@ -24,6 +24,68 @@ class settings(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.group(name="prefixes",description="view your server's prefixes.",aliases=['prefix'],invoke_without_command=True)
+    async def _wrench_prefix(self, ctx):
+
+        prefixes = await self.bot.pool.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+        list = [f"{prefixes['prefixes'].index(x)}. {x}" for x in prefixes['prefixes']]
+        embed = discord.Embed(description='\n'.join(list),title=f"{ctx.channel.guild}'s prefixes")
+
+        await ctx.channel.send(embed=embed)
+
+    @_wrench_prefix.command(name="add",description="Add a new prefix to your guild's prefix list.",usage="<prefix>")
+    @commands.has_permissions(administrator=True)
+    async def _wrench_prefixes_add(self, ctx, *, prefix:str):
+        if len(prefix) > 30:
+            return await ctx.channel.send("Prefixes may not be over **30** characters long.")
+
+        async with self.bot.pool.acquire() as conn:
+            guild_data = await self.bot.pool.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+
+            if len(guild_data['prefixes']) > 30:
+                return await ctx.channel.send(f"You can't have more than **30** prefixes!!!! CALM DOWN PLEASE!!!!!!!")
+
+            if prefix in guild_data['prefixes']:
+                return await ctx.channel.send(f"That prefix is already in your server's list. You can remove it with `{ctx.prefix}prefix remove {prefix.lower()}`")
+
+            try:
+                old_prefixes = [x for x in guild_data['prefixes']]
+                old_prefixes.append(prefix)
+                new_prefixes = await conn.fetchrow("UPDATE guilds SET prefixes = $1 WHERE id = $2 RETURNING *",old_prefixes,ctx.channel.guild.id)
+                self.bot.prefixes[ctx.channel.guild.id] = new_prefixes['prefixes']
+                list = [f"{new_prefixes['prefixes'].index(x)}. {x}" for x in new_prefixes['prefixes']]
+                embed = discord.Embed(description='\n'.join(list),title=f"Updated {ctx.channel.guild}'s prefixes")
+                await ctx.channel.send(embed=embed)
+            except Exception as err:
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
+
+    @_wrench_prefix.command(name="remove",description="Remove a new prefix to your guild's prefix list.",usage="<prefix>")
+    @commands.has_permissions(administrator=True)
+    async def _wrench_prefixes_remove(self, ctx, *, prefix:str):
+        if len(prefix) > 30:
+            return await ctx.channel.send("Prefixes may not be over **30** characters long.")
+
+        async with self.bot.pool.acquire() as conn:
+            guild_data = await self.bot.pool.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+        
+            if prefix not in guild_data['prefixes'] or prefix.lower() in ['wrench','w!']:
+                return await ctx.channel.send(f"That prefix is not in your server's list. You can remove it with `{ctx.prefix}prefix add {prefix.lower()}`")
+
+            try:
+                old_prefixes = [x for x in guild_data['prefixes']]
+                old_prefixes.remove(prefix)
+                new_prefixes = await conn.fetchrow("UPDATE guilds SET prefixes = $1 WHERE id = $2 RETURNING *",old_prefixes,ctx.channel.guild.id)
+                self.bot.prefixes[ctx.channel.guild.id] = new_prefixes['prefixes']
+                list = [f"{new_prefixes['prefixes'].index(x)}. {x}" for x in new_prefixes['prefixes']]
+                embed = discord.Embed(description='\n'.join(list),title=f"Updated {ctx.channel.guild}'s prefixes")
+                await ctx.channel.send(embed=embed)
+            except Exception as err:
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
+
     @commands.command(
         name="modlogs",
         usage="<#channel>",
