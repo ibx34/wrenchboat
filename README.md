@@ -4,3 +4,4 @@
 
 [support server](https://discord.gg/q7Uq8TbYvr)
 
+### ANY CHANGES MADE MUST BE DOCUMENTED
