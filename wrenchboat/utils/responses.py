@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from logger import logging
 
 in_line_responses = {
     "normal": {
@@ -34,13 +35,15 @@ class Responder:
     async def in_line(cls, ctx, user, action: str, reason, time="Indefinite"):
         # En is currently the only language >:)
         returned_message = in_line_responses[ctx.bot.guild_responses[ctx.guild.id]][ctx.bot.language[ctx.channel.guild.id]]
-        await ctx.channel.send(returned_message.format(
-                guild=ctx.guild,
-                moderator=ctx.author,
-                action=action + "ed",
-                reason=reason,
-                time=time,
-                user=user,
+        try:
+            await ctx.channel.send(returned_message.format(
+                    guild=ctx.guild,
+                    moderator=ctx.author,
+                    action=action + "ed",
+                    reason=reason,
+                    time=time,
+                    user=user,
+                )
             )
-        )
-
+        except Exception as err:
+            logging.fail(err)
