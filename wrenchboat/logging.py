@@ -9,6 +9,21 @@ class logging(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @classmethod
+    async def automod_logs(cls,action,user,channel,message,trigger,bot):
+        
+        if not bot.logging.get(message.guild.id).get("automod_logs"):
+            return
+
+        logs = bot.get_channel(bot.logging[message.guild.id]['automod_logs'])
+
+        embed = discord.Embed(description=f"{user} ({user.id}) triggered the {action} automod:")
+        embed.add_field(name="Trigger",value=trigger)
+        embed.add_field(name="Action",value=action)
+        embed.add_field(name="Content",value=message.content,inline=False)
+
+        await logs.send(embed=embed)
+
     @commands.Cog.listener()
     async def on_message_delete(self,message):
         if message.author.bot:
@@ -36,7 +51,7 @@ class logging(commands.Cog):
 
         if before.content.lower() == after.content.lower():
             return
-            
+
         logs = self.bot.get_channel(self.bot.logging[after.guild.id]['message_logs'])
 
         if after.pinned:
