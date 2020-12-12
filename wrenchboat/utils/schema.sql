@@ -3,7 +3,7 @@ IF NOT EXISTS guilds
 (
     "id" BIGINT,
     "prefix" VARCHAR,
-    "prefixes" VARCHAR[] DEFAULT '{}',
+    "prefixes" VARCHAR[] DEFAULT '{"wrench","w!"}',
     "muterole" BIGINT,
     "dontmute" BIGINT,
     "modlogs" BIGINT,
@@ -20,11 +20,15 @@ IF NOT EXISTS guilds
     "antispam" VARCHAR,
     "antiping" VARCHAR,
     "antiemojispam" VARCHAR,
+    "token_remover" BOOLEAN DEFAULT FALSE,
     "modrole" BIGINT,
     "starboard_channel" BIGINT,
     "needed_stars" BIGINT DEFAULT 3,
     "self_starring" BOOLEAN DEFAULT FALSE,
-    "language" VARCHAR DEFAULT "en"
+    "language" VARCHAR DEFAULT "en",
+    "global_bans" BOOLEAN DEFAULT FALSE,
+    "response_type" VARCHAR DEFAULT 'advanced',
+    "anti_ping_list" BIGINT[] DEFAULT '{}'
 );
 
 CREATE TABLE

@@ -1,3 +1,19 @@
+"""
+Copyright 2020 ibx34
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import csv
 import os
 import random
@@ -19,6 +35,9 @@ from wrenchboat.utils import pagination
 from wrenchboat.utils.checks import checks
 from wrenchboat.utils.modlogs import modlogs
 
+seconds_per_unit = {"s": 1, "m": 60, "h": 3600}
+def convert_to_seconds(s):
+    return int(s[:-1]) * seconds_per_unit[s[-1]]
 
 class settings(commands.Cog):
     def __init__(self, bot):
@@ -137,12 +156,39 @@ class settings(commands.Cog):
             )
 
     @commands.command(
+        name="automodlogs",
+        usage="<#channel>",
+        description="Set your server's automod logs. When an automated action happens, this will be the place to look",
+    )
+    @commands.has_permissions(administrator=True)
+    async def _automodlogs(self, ctx, *, channel: discord.TextChannel = None):
+        async with self.bot.pool.acquire() as conn:
+            try:
+                await conn.execute(
+                    "UPDATE guilds SET automodlogs = $1 WHERE id = $2",
+                    None if channel is None else channel.id,
+                    ctx.channel.guild.id,
+                )
+
+                self.bot.logging[ctx.channel.guild.id]["automod_logs"] = (
+                    None if channel is None else channel.id
+                )
+            except Exception as err:
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
+
+            await ctx.channel.send(
+                f"""OMG THAT TOOK EFFORT!!!! I set your automod logs to {channel.mention if channel is not None else "Disabled"}."""
+            )
+
+    @commands.command(
         name="serverlogs",
         usage="<#channel>",
         description="Set your server's servers logs. General server actions will be logged here.",
     )
     @commands.has_permissions(administrator=True)
-    async def _messagelogs(self, ctx, *, channel: discord.TextChannel = None):
+    async def _serverlogs(self, ctx, *, channel: discord.TextChannel = None):
         async with self.bot.pool.acquire() as conn:
             try:
                 await conn.execute(
@@ -381,7 +427,7 @@ class settings(commands.Cog):
 
         if option.lower() not in ["ban", "mute", "kick", "delete"]:
             return await ctx.channel.send(
-                "**BRUH** provide an actual action my guy... (Actions: warn, kick, mute)"
+                "**BRUH** provide an actual action my guy... (Actions: warn, kick, mute,ban)"
             )
 
         async with self.bot.pool.acquire() as conn:
@@ -448,6 +494,58 @@ class settings(commands.Cog):
                     everyone=False, roles=False, users=False
                 ),
             )
+
+    @commands.group(name="antimassping",usage="(BAN,KICK,MUTE,DELETE) (amount of pings)",description="Punish a user if they ping one or more users.",invoke_without_command=True)
+    @commands.has_permissions(administrator=True)
+    async def _antimassping(self, ctx, action:str,amount:int=3):
+
+        if action.lower() not in ["ban", "mute", "kick", "delete"]:
+            return await ctx.channel.send(
+                "**BRUH** provide an actual action my guy... (Actions: warn, kick, mute,ban)"
+            )
+
+        async with self.bot.pool.acquire() as conn:
+
+            try:
+                await conn.execute(
+                    "UPDATE guilds SET antimassping = $1 WHERE id = $2",
+                    f"{action.lower()}|{amount}",
+                    ctx.channel.guild.id,
+                )
+                self.bot.automod[ctx.channel.guild.id]["antimassping"] =                 {
+                    "amount": amount,
+                    "action": action.lower(),
+                }
+            except Exception as err:
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
+
+            await ctx.channel.send(
+                f"Cool. I set your server's antimassping to {action.lower()}"
+            )   
+
+    @_antimassping.command(
+        name="disable", description="Disable antimassping for your server."
+    )
+    @commands.has_permissions(administrator=True)
+    async def _antimassping_disable(self, ctx):
+
+        async with self.bot.pool.acquire() as conn:
+
+            try:
+                await conn.execute(
+                    "UPDATE guilds SET antimassping = $1 AND id = $2",
+                    None,
+                    ctx.channel.guild.id,
+                )
+                del self.bot.automod[ctx.channel.guild.id]["antimassping"]
+            except Exception as err:
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
+
+            await ctx.channel.send(f"👍")        
 
     @commands.command(
         name="pingmod",
