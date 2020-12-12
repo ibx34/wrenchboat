@@ -6,13 +6,13 @@ import sys
 import aiohttp
 import aioredis
 import asyncpg
-import discord 
+import discord
 from discord.ext import commands
 
-import logging
 import collections
 import config
 from logger import logging
+
 
 class WrenchBoat(commands.Bot):
     def __init__(self):
@@ -61,7 +61,7 @@ class WrenchBoat(commands.Bot):
                 return commands.when_mentioned_or(*guild_prefix)(bot, message)
         except KeyError:
             return commands.when_mentioned_or(*self.config.prefix)(bot, message)
-        #return commands.when_mentioned_or(*config.prefix)(bot, message)
+        # return commands.when_mentioned_or(*config.prefix)(bot, message)
 
     async def start(self):
         self.session = aiohttp.ClientSession(loop=self.loop)
@@ -76,7 +76,7 @@ class WrenchBoat(commands.Bot):
             )
         except Exception as err:
             logging.fail(err)
-            
+
         self.guild = self.get_guild(config.guild)
         self.modlogs = self.guild.get_channel(config.modlogs)
 
@@ -99,11 +99,16 @@ class WrenchBoat(commands.Bot):
                 if i["antinvite"] in ["ban", "kick", "delete", "mute"]
                 else None
             )
-            self.automod[i["id"]]["antimassping"] = (
-                i["antimassping"]
-                if i["antimassping"] in ["ban", "kick", "delete", "mute"]
-                else None
-            )
+
+            # self.automod[i["id"]]["antimassping"] = (
+            #     {
+            #         "amount": i["antimassping"].split("|")[1],
+            #         "action": i["antimassping"].split("|")[0],
+            #     }
+            #     if i["antimassping"]
+            #     else None
+            # )
+
             self.automod[i["id"]]["antiprofanity"] = (
                 i["antiprofanity"]
                 if i["antiprofanity"] in ["ban", "kick", "delete", "mute"]
@@ -117,15 +122,18 @@ class WrenchBoat(commands.Bot):
                 if i["antiraid"]
                 else None
             )
-            self.automod[i['id']]['token_remover'] = i['token_remover']
-            
+            self.automod[i["id"]]["token_remover"] = i["token_remover"]
+
             """
             Logging Caching
             """
 
-            self.logging[i["id"]] = {"message_logs": i["messagelogs"],"server_logs": i["serverlogs"],"user_logs": i["userlogs"],"automod_logs": i["automodlogs"]}
-
-
+            self.logging[i["id"]] = {
+                "message_logs": i["messagelogs"],
+                "server_logs": i["serverlogs"],
+                "user_logs": i["userlogs"],
+                "automod_logs": i["automodlogs"],
+            }
 
         for i in await self.pool.fetch("SELECT * FROM infractions ORDER BY id DESC"):
             self.cases[i["guild"]] = i["id"]
@@ -146,7 +154,7 @@ class WrenchBoat(commands.Bot):
             status=discord.Status.online, activity=discord.Game("with wrenches")
         )
         logging.info("Bot started loading modules")
-        
+
         for ext in config.extensions:
             try:
                 self.load_extension(f"{ext}")
@@ -154,7 +162,9 @@ class WrenchBoat(commands.Bot):
                 print(f"Failed to load {ext}, {e}")
                 logging.fail(ext)
 
-        logging.info(f"Bot started. Guilds: {len(self.guilds)} Users: {len(self.users)}")
+        logging.info(
+            f"Bot started. Guilds: {len(self.guilds)} Users: {len(self.users)}"
+        )
 
     async def on_message(self, message):
 
