@@ -43,15 +43,25 @@ class WrenchBoat(commands.Bot):
         self.prefixes = {}
         self.automod = {}
         self.muteroles = {}
+        self.guild_responses = {}
         self.modlog_channel = {}
         self.logging = {}
         self.highlights = {}
         self.cases = collections.defaultdict(lambda: 0)
         self.snips = {}
+        self.language = {}
 
     async def get_pre(self, bot, message):
 
-        return commands.when_mentioned_or(*config.prefix)(bot, message)
+        if not message.guild:
+            return commands.when_mentioned_or(*self.config.prefix)(bot, message)
+        try:
+            guild_prefix = bot.prefixes[message.guild.id]
+            if guild_prefix:
+                return commands.when_mentioned_or(*guild_prefix)(bot, message)
+        except KeyError:
+            return commands.when_mentioned_or(*self.config.prefix)(bot, message)
+        #return commands.when_mentioned_or(*config.prefix)(bot, message)
 
     async def start(self):
         self.session = aiohttp.ClientSession(loop=self.loop)
@@ -59,11 +69,14 @@ class WrenchBoat(commands.Bot):
         await super().start(config.token)
 
     async def on_ready(self):
-        self.pool = await asyncpg.create_pool(**self.config.db, max_size=150)
-        self.redis = await aioredis.create_redis_pool(
-            "redis://localhost", loop=self.loop
-        )
-
+        try:
+            self.pool = await asyncpg.create_pool(**self.config.db, max_size=150)
+            self.redis = await aioredis.create_redis_pool(
+                "redis://localhost", loop=self.loop
+            )
+        except Exception as err:
+            logging.fail(err)
+            
         self.guild = self.get_guild(config.guild)
         self.modlogs = self.guild.get_channel(config.modlogs)
 
@@ -72,8 +85,10 @@ class WrenchBoat(commands.Bot):
             General Caching
             """
 
-            self.prefixes[i["id"]] = i["prefix"]
+            self.prefixes[i["id"]] = i["prefixes"]
             self.modlog_channel[i["id"]] = i["modlogs"]
+            self.guild_responses[i["id"]] = i["response_type"]
+            self.language[i["id"]] = i["language"]
 
             """
             Automod Caching
@@ -144,9 +159,6 @@ class WrenchBoat(commands.Bot):
     async def on_message(self, message):
 
         if message.author.bot:
-            return
-        
-        if not message.guild:
             return
 
         ctx = await self.get_context(message)
