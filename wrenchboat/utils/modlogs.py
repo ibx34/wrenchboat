@@ -20,7 +20,7 @@ modlogs_messages = {
         **User**: {user} ({user_id}) ({user_mention})
         **Role**: {role} ({role_id})
         **Reason**: {reason}
-        **Moderator**: {moderator}
+        **Responsible moderator**: {moderator}
         """
         )
     },
@@ -31,7 +31,7 @@ modlogs_messages = {
         **User**: {user} ({user_id}) ({user_mention})
         **Role**: {role} ({role_id})
         **Reason**: {reason}
-        **Moderator**: {moderator}
+        **Responsible moderator**: {moderator}
         """
         )
     },
@@ -42,7 +42,7 @@ modlogs_messages = {
         **User**: {user} ({user_id}) ({user_mention})
         **Role**: {role} ({role_id})
         **Reason**: {reason}
-        **Moderator**: {moderator}
+        **Responsible moderator**: {moderator}
         """
         )
     },
@@ -52,7 +52,7 @@ modlogs_messages = {
         **Voicemute** | Case {case}
         **User**: {user} ({user_id}) ({user_mention})
         **Reason**: {reason}
-        **Moderator**: {moderator}
+        **Responsible moderator**: {moderator}
         """
         )
     },
@@ -62,7 +62,7 @@ modlogs_messages = {
         **Voicemute** | Case {case}
         **User**: {user} ({user_id}) ({user_mention})
         **Reason**: {reason}
-        **Moderator**: {moderator}
+        **Responsible moderator**: {moderator}
         """
         )
     },
@@ -72,7 +72,7 @@ modlogs_messages = {
         **Kick** | Case {case}
         **User**: {user} ({user_id}) ({user_mention})
         **Reason**: {reason}
-        **Moderator**: {moderator}
+        **Responsible moderator**: {moderator}
         """
         )
     },
@@ -82,7 +82,7 @@ modlogs_messages = {
         **Ban** | Case {case}
         **User**: {user} ({user_id}) ({user_mention})
         **Reason**: {reason}
-        **Moderator**: {moderator}
+        **Responsible moderator**: {moderator}
         """
         )
     },
@@ -92,7 +92,7 @@ modlogs_messages = {
         **Unban** | Case {case}
         **User**: {user} ({user_id}) ({user_mention})
         **Reason**: {reason}
-        **Moderator**: {moderator}
+        **Responsible moderator**: {moderator}
         """
         )
     },
@@ -103,7 +103,7 @@ modlogs_messages = {
         **User**: {user} ({user_id}) ({user_mention})
         **Role**: {role} ({role_id})
         **Reason**: {reason}
-        **Moderator**: {moderator}
+        **Responsible moderator**: {moderator}
         """
         )
     },
@@ -113,7 +113,7 @@ modlogs_messages = {
         **Warn** | Case {case}
         **User**: {user} ({user_id}) ({user_mention})
         **Reason**: {reason}
-        **Moderator**: {moderator}
+        **Responsible moderator**: {moderator}
         """
         )
     },
@@ -123,7 +123,7 @@ modlogs_messages = {
         **Warn** | Case {case}
         **User**: {user} ({user_id}) ({user_mention})
         **Reason**: {reason}
-        **Moderator**: {moderator}
+        **Responsible moderator**: {moderator}
         """
         )
     },
@@ -133,7 +133,7 @@ modlogs_messages = {
         **Softban** | Case {case}
         **User**: {user} ({user_id}) ({user_mention})
         **Reason**: {reason}
-        **Moderator**: {moderator}
+        **Responsible moderator**: {moderator}
         """
         )
     },
@@ -143,7 +143,7 @@ modlogs_messages = {
         **Forceban** | Case {case}
         **User**: {user} ({user_id}) ({user_mention})
         **Reason**: {reason}
-        **Moderator**: {moderator}
+        **Responsible moderator**: {moderator}
         """
         )
     },
