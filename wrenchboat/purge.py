@@ -5,7 +5,6 @@ import config
 import discord
 from discord.ext import commands
 
-
 class _purge(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
