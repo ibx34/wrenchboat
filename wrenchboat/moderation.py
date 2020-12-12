@@ -18,6 +18,7 @@ from discord.ext import commands
 from wrenchboat.utils import pagination
 from wrenchboat.utils.checks import checks
 from wrenchboat.utils.modlogs import modlogs
+from wrenchboat.utils.responses import Responder
 import typing
 
 id = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
@@ -257,13 +258,48 @@ class moderation(commands.Cog):
             time=datetime.utcnow(),
         )
 
-    @commands.command(
-        name="warnn",
+    @commands.group(
+        name="warn",
         usage="@user <reason>",
-        description="Warn a user and enforece what you need to. They are not notified.",
+        description="Warn a user and enforece what you need to. I don't care :/",
+        inovoke_without_command=True
     )
     @commands.has_permissions(kick_members=True)
-    async def _warnn(
+    async def _warn(
+        self,
+        ctx,
+        user: discord.Member,
+        *,
+        reason,
+    ):
+
+        if not checks.above(self.bot,user,ctx.author):
+            return
+
+        try:
+            await user.send(f"You've been warning in **{ctx.guild.name}** for:\n{reason}")
+        except:
+            pass
+
+        await Responder.in_line(ctx=ctx,user=user,action=ctx.command.name,reason=reason)
+        await modlogs(
+            self=self.bot,
+            moderator=ctx.author,
+            user=user,
+            reason=reason,
+            type=ctx.command.name.capitalize(),
+            case=None,
+            time=datetime.utcnow(),
+        )
+
+    @_warn.command(
+        name="nonotify",
+        usage="@user <reason>",
+        description="Warn a user and enforece what you need to. They are not notified.",
+        aliases=['nn']
+    )
+    @commands.has_permissions(kick_members=True)
+    async def _warn_nonotify(
         self,
         ctx,
         user: discord.Member,
@@ -285,40 +321,6 @@ class moderation(commands.Cog):
             time=datetime.utcnow(),
         )
 
-    @commands.command(
-        name="warn",
-        usage="@user <reason>",
-        description="Warn a user and enforece what you need to. I don't care :/",
-    )
-    @commands.has_permissions(kick_members=True)
-    async def _warn(
-        self,
-        ctx,
-        user: discord.Member,
-        *,
-        reason,
-    ):
-
-        if not checks.above(self.bot,user,ctx.author):
-            return
-
-        failed = " "
-        try:
-            await user.send(f"You've been warning in **{ctx.guild.name}** for:\n{reason}")
-        except:
-            failed = f":warning: Failed to dm {user}, they either have their dms disabled / have me blocked"
-
-        await ctx.channel.send(f"{user} has been warned.\n\n{failed}")
-        await modlogs(
-            self=self.bot,
-            moderator=ctx.author,
-            user=user,
-            reason=reason,
-            type=ctx.command.name.capitalize(),
-            case=None,
-            time=datetime.utcnow(),
-        )
-    
     @commands.command(name="mute",usage="@user <reason>",description="Add your server's mute role to a user to stop them from talking :sunglasses:")
     @commands.has_permissions(manage_messages=True)
     async def _mute(self,ctx,user:discord.Member,*,reason="No reason provided. You can add a reason with `case <id> <reason>`.",):
@@ -374,7 +376,7 @@ class moderation(commands.Cog):
                         await user.remove_roles(x)
                     except:
                         continue
-                    
+
                 await user.add_roles(muterole)
             except Exception as err:
                 return await ctx.channel.send(
