@@ -11,6 +11,7 @@ import discord
 from discord.ext import commands
 
 from wrenchboat.assets.words import list
+from wrenchboat.logging import logging
 
 class Switch(object):
     def __init__(self, user, message, bot):
@@ -31,6 +32,7 @@ class Switch(object):
     async def kick(self):
         return await self.user.kick(reason=f"[AutoModeration]: {self.message.author} ({self.message.author.id})")
 
+
     async def mute(self):
         async with self.bot.pool.acquire() as conn:
             guild = await conn.fetchrow(
@@ -49,7 +51,7 @@ class Switch(object):
                 )
             except:
                 return
-
+                
 class AutoModeration(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -70,19 +72,19 @@ class AutoModeration(commands.Cog):
         - currently ignores embeds. Planned on making an option for this.
         """
 
-        if self.bot.automod[message.guild.id].get('antinvite') is None:
-            return
+        if self.bot.automod[message.guild.id].get('antinvite'):
 
-        check = re.search(r"((https?:\/\/)?discord\.gg\/)|(https?:\/\/discord\.com\/invite\/)|(https?:\/\/discordapp\.com\/invite\/)([a-zA-Z0-9\-]+)", message.content)
-        if check:
-            await Switch(
-                user=message.author, message=message, bot=self.bot
-            ).Actions(action=self.bot.automod[message.guild.id]['antinvite'])
-        else:
-            return
-            
-        if self.bot.automod.get(message.guild.id) is None:
-            return
+            check = re.search(r"((https?:\/\/)?discord\.gg\/)|(https?:\/\/discord\.com\/invite\/)|(https?:\/\/discordapp\.com\/invite\/)([a-zA-Z0-9\-]+)", message.content)
+            if check:
+                await Switch(
+                    user=message.author, message=message, bot=self.bot
+                ).Actions(action=self.bot.automod[message.guild.id]['antinvite'])
+                await logging.automod_logs(action=self.bot.automod[message.guild.id]['antinvite'],user=message.author,channel=message.channel,message=message,trigger="Anti Invite",bot=self.bot)
+            else:
+                return
+                
+            if self.bot.automod.get(message.guild.id) is None:
+                return
 
         """
         Anti Cursing module
@@ -91,16 +93,27 @@ class AutoModeration(commands.Cog):
         - searches for all words in wrenchboat/assets/words.py
         """
 
-        if self.bot.automod[message.guild.id].get('antiprofanity') is None:
-            return
+        if self.bot.automod[message.guild.id].get('antiprofanity'):
 
-        for x in list:
-            if x in message.content:
+            for x in list:
+                if x in message.content:
 
+                    await Switch(
+                        user=message.author, message=message, bot=self.bot
+                    ).Actions(action=self.bot.automod[message.guild.id]['antiprofanity'])
+                    await logging.automod_logs(action=self.bot.automod[message.guild.id]['antiprofanity'],user=message.author,channel=message.channel,message=message,trigger="Anti Profanity",bot=self.bot)
+        """
+        Anti Massping
+
+        - Only fires if the amount of mentions in a message are over the set amount
+        """
+
+        if self.bot.automod[message.guild.id].get('antimassping'):
+            if len(message.raw_mentions) >= int(self.bot.automod[message.guild.id]['antimassping']['amount']):
                 await Switch(
                     user=message.author, message=message, bot=self.bot
-                ).Actions(action=self.bot.automod[message.guild.id]['antiprofanity'])
-            
+                ).Actions(action=self.bot.automod[message.guild.id]['antimassping']['action'])                
+                await logging.automod_logs(action=self.bot.automod[message.guild.id]['antimassping']['action'],user=message.author,channel=message.channel,message=message,trigger="Anti Massping",bot=self.bot)
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
