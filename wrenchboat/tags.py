@@ -19,7 +19,7 @@ from wrenchboat.utils import pagination
 class tags(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
+    
     @commands.group(name="tag",usage="<name>",description="View a tag's content.",invoke_without_command=True)
     async def _tag(self,ctx,*,name):
         async with self.bot.pool.acquire() as conn:
