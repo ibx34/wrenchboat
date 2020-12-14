@@ -29,8 +29,6 @@ rotunicode = "*"
 ftfy = "*"
 unidecode = "*"
 googletrans = "*"
-beeprint = "*"
-pypspark = "*"
 gtrans = "*"
 textblob = "*"
 
