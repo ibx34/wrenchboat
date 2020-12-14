@@ -6,7 +6,6 @@ default_reason = "No reason provided. You can add a reason with `case <id> <reas
 characters = ['~', ':', "'", '+', '[', '\\', '@', '^', '{', '%', '(', '-', '"', '*', '|', ',', '&', '<', '`', '}', '.', '_', '=', ']', '!', '>', ';', '?', '#', '$', ')', '/'] # Characters for anti hoist or dehoist
 clean_names = ['I like attention', 'Attention Goblin', 'Specail Char User', 'Power Squad', 'Nice person :)', 'How are you today?', 'GG EZ', 'Minecraft is good', 'Hoisters are fun', 'Mods ara have stinky'] # Names used in anti hoist
 support = "" # Your support server's invite
-guild_whitelist = [] # Whitelist your guild with this.
 
 extensions = [
     "jishaku",
