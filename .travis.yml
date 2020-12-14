@@ -6,4 +6,4 @@ install:
   - pipenv install
 # command to run tests
 script:
-  - pytest
+  - pipenv run python main.py
