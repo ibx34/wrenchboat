@@ -21,6 +21,7 @@ import config
 import discord
 from discord.ext import commands
 
+
 class _purge(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -28,8 +29,6 @@ class _purge(commands.Cog):
     @commands.group(
         name="purge",
         invoke_without_command=True,
-        usage="(amount)",
-        description="Purge an amount of messages from a channel. (Pinned messages are ignored).",
         aliases=["prune", "clear", "massdelete"],
     )
     @commands.has_permissions(manage_messages=True)
@@ -38,7 +37,7 @@ class _purge(commands.Cog):
             return not m.pinned
 
         try:
-            purged = await ctx.channel.purge(limit=amount+1, check=is_pinned)
+            purged = await ctx.channel.purge(limit=amount + 1, check=is_pinned)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -48,18 +47,14 @@ class _purge(commands.Cog):
             f"I have purged **{len(purged)}** messages. *Say thank you*"
         )
 
-    @_purge.command(
-        name="from",
-        usage="@user (amount)",
-        description="Purge an amount of message from a channel that a certain user sent.",
-    )
+    @_purge.command(name="from",)
     @commands.has_permissions(manage_messages=True)
     async def _from(self, ctx, user: discord.Member, amount: int):
         def is_x(m):
             return m.author == user
 
         try:
-            purged = await ctx.channel.purge(limit=amount+1, check=is_x)
+            purged = await ctx.channel.purge(limit=amount + 1, check=is_x)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -69,18 +64,14 @@ class _purge(commands.Cog):
             f"I have purged **{len(purged)}** messages from {user}. *You better say thank you*"
         )
 
-    @_purge.command(
-        name="bot",
-        usage="(amount)",
-        description="Purge an amount of messages from a channel that were sent by a bot.",
-    )
+    @_purge.command(name="bot",)
     @commands.has_permissions(manage_messages=True)
     async def _bot(self, ctx, amount: int):
         def is_bot(m):
             return m.author.bot
 
         try:
-            purged = await ctx.channel.purge(limit=amount+1, check=is_bot)
+            purged = await ctx.channel.purge(limit=amount + 1, check=is_bot)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -90,18 +81,14 @@ class _purge(commands.Cog):
             f"I have purged **{len(purged)}** messages that were from bots. *You better say thank you*"
         )
 
-    @_purge.command(
-        name="embed",
-        usage="(amount)",
-        description="Purge an amount of messages from a channel that **include** embed(s)",
-    )
+    @_purge.command(name="embed",)
     @commands.has_permissions(manage_messages=True)
     async def _embed(self, ctx, amount: int):
         def has_embed(m):
             return m.embeds
 
         try:
-            purged = await ctx.channel.purge(limit=amount+1, check=has_embed)
+            purged = await ctx.channel.purge(limit=amount + 1, check=has_embed)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -111,18 +98,14 @@ class _purge(commands.Cog):
             f"I have purged **{len(purged)}** messages that contained embeds. *You better say thank you*"
         )
 
-    @_purge.command(
-        name="contains",
-        usage="(amount) (phrase to searh)",
-        description="Purge an amount of messages from a channel that contain a certain phrase(s).",
-    )
+    @_purge.command(name="contains",)
     @commands.has_permissions(manage_messages=True)
     async def _contains(self, ctx, amount: int, *, contains: str):
         def contains_x(m):
             return contains in m.content
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount)+1, check=contains_x)
+            purged = await ctx.channel.purge(limit=int(amount) + 1, check=contains_x)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -132,11 +115,7 @@ class _purge(commands.Cog):
             f"I have purged **{len(purged)}** messages that contained `{contains}`. *I'm serious this one took a lot to do, thank me*"
         )
 
-    @_purge.command(
-        name="reactions",
-        usage="(amount) <reation>",
-        description="Purge an amount of messages that have reactions or a certain reaction.",
-    )
+    @_purge.command(name="reactions",)
     @commands.has_permissions(manage_messages=True)
     async def _reactions(self, ctx, amount: int, reaction: str = None):
         def has_reactions(m):
@@ -148,7 +127,7 @@ class _purge(commands.Cog):
                 return m.reactions
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount)+1, check=has_reactions)
+            purged = await ctx.channel.purge(limit=int(amount) + 1, check=has_reactions)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -158,11 +137,7 @@ class _purge(commands.Cog):
             f"I have purged **{len(purged)}** messages that had {f'the reaction {reaction}' if reaction is not None else 'reactions.'} *This took me a lot of work :sad:*"
         )
 
-    @_purge.command(
-        name="mentions",
-        usage="(amount) <mention>",
-        description="Purge an amount of messages that mentions anyone or a certain someone",
-    )
+    @_purge.command(name="mentions",)
     @commands.has_permissions(manage_messages=True)
     async def _mentions(self, ctx, amount: int, member: discord.Member = None):
         def has_mentions(m):
@@ -173,7 +148,7 @@ class _purge(commands.Cog):
                 return m.mentions
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount)+1, check=has_mentions)
+            purged = await ctx.channel.purge(limit=int(amount) + 1, check=has_mentions)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -184,18 +159,14 @@ class _purge(commands.Cog):
             allowed_mentions=discord.AllowedMentions(everyone=False, users=False),
         )
 
-    @_purge.command(
-        name="caps",
-        usage="(amount)",
-        description="Purge an amount of messages that is in full caps",
-    )
+    @_purge.command(name="caps",)
     @commands.has_permissions(manage_messages=True)
-    async def _mentions(self, ctx, amount: int):
+    async def _caps(self, ctx, amount: int):
         def is_upper(m):
             return m.content.upper() == m.content
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount)+1, check=is_upper)
+            purged = await ctx.channel.purge(limit=int(amount) + 1, check=is_upper)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -205,11 +176,7 @@ class _purge(commands.Cog):
             f"I have purged **{len(purged)}** messages that had all caps in it."
         )
 
-    @_purge.command(
-        name="between",
-        usage="(id 1) (id 2)",
-        description="Purge an amount of messages that is between message **1** and message **2**",
-    )
+    @_purge.command(name="between",)
     @commands.has_permissions(manage_messages=True)
     async def _between(self, ctx, message1: discord.Message, message2: discord.Message):
         try:
@@ -223,18 +190,14 @@ class _purge(commands.Cog):
             f"I have purged **{len(purged)}** messages that were between {message1.id} and {message2.id}"
         )
 
-    @_purge.command(
-        name="system",
-        usage="(amount)",
-        description="Purge an amount of message that were sent by system",
-    )
+    @_purge.command(name="system",)
     @commands.has_permissions(manage_messages=True)
     async def _system(self, ctx, amount: int):
         def is_system(m):
             return m.is_system()
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount)+1, check=is_system)
+            purged = await ctx.channel.purge(limit=int(amount) + 1, check=is_system)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -244,11 +207,7 @@ class _purge(commands.Cog):
             f"I have purged **{len(purged)}** messages that were from system!"
         )
 
-    @_purge.command(
-        name="newusers",
-        usage="(amount)",
-        description="Purge an amount of message that were sent by new users",
-    )
+    @_purge.command(name="newusers",)
     @commands.has_permissions(manage_messages=True)
     async def _newusers(self, ctx, amount: int):
         def is_new(m):
@@ -257,7 +216,7 @@ class _purge(commands.Cog):
             )
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount)+1, check=is_new)
+            purged = await ctx.channel.purge(limit=int(amount) + 1, check=is_new)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -267,18 +226,16 @@ class _purge(commands.Cog):
             f"I have purged **{len(purged)}** messages that were from users who recently joined!"
         )
 
-    @_purge.command(
-        name="attachments",
-        usage="(amount)",
-        description="Purge an amount of message that have attachments with them",
-    )
+    @_purge.command(name="attachments",)
     @commands.has_permissions(manage_messages=True)
     async def _attachments(self, ctx, amount: int):
         def has_attachments(m):
             return m.attachments
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount)+1, check=has_attachments)
+            purged = await ctx.channel.purge(
+                limit=int(amount) + 1, check=has_attachments
+            )
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -288,18 +245,14 @@ class _purge(commands.Cog):
             f"I have purged **{len(purged)}** messages that had attachments!"
         )
 
-    @_purge.command(
-        name="noroles",
-        usage="(amount)",
-        description="Purge an amount of message that the author has no roles",
-    )
+    @_purge.command(name="noroles",)
     @commands.has_permissions(manage_messages=True)
-    async def no_roles(self,ctx,amount: int) -> int: 
+    async def _no_roles(self, ctx, amount: int):
         def has_no_roles(m):
             return m.author.roles == [ctx.guild.default_role]
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount)+1, check=has_no_roles)
+            purged = await ctx.channel.purge(limit=int(amount) + 1, check=has_no_roles)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -309,18 +262,14 @@ class _purge(commands.Cog):
             f"I have purged **{len(purged)}** messages where the author had no roles!"
         )
 
-    @_purge.command(
-        name="nonembeds",
-        usage="(amount)",
-        description="Purge an amount of message that dont have any embed(s)",
-    )
+    @_purge.command(name="nonembeds",)
     @commands.has_permissions(manage_messages=True)
     async def _nonembeds(self, ctx, amount: int):
         def has_no_embeds(m):
             return not m.embeds
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount)+1, check=has_no_embeds)
+            purged = await ctx.channel.purge(limit=int(amount) + 1, check=has_no_embeds)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -330,18 +279,14 @@ class _purge(commands.Cog):
             f"I have purged **{len(purged)}** messages that didn't have an embed"
         )
 
-    @_purge.command(
-        name="unpinned",
-        usage="(amount)",
-        description="Purge an amount of message that aren't pinned",
-    )
+    @_purge.command(name="unpinned",)
     @commands.has_permissions(manage_messages=True)
     async def _unpinned(self, ctx, amount: int):
         def not_pinned(m):
             return not m.pinned
 
         try:
-            purged = await ctx.channel.purge(limit=int(amount)+1, check=not_pinned)
+            purged = await ctx.channel.purge(limit=int(amount) + 1, check=not_pinned)
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
@@ -350,6 +295,7 @@ class _purge(commands.Cog):
         await ctx.channel.send(
             f"I have purged **{len(purged)}** messages that weren't pinned"
         )
-        
+
+
 def setup(bot):
     bot.add_cog(_purge(bot))

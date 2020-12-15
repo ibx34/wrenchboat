@@ -44,11 +44,17 @@ class moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="massban",usage="[@user] <reason>",description="Ban multiple people from your server at once.")
+    @commands.command(name="massban")
     @commands.has_permissions(ban_members=True)
-    async def _massban(self,ctx,users: commands.Greedy[discord.Member],*,reason="No reason provided. You can add a reason with `case <id> <reason>`."):
+    async def _massban(
+        self,
+        ctx,
+        users: commands.Greedy[discord.Member],
+        *,
+        reason="No reason provided. You can add a reason with `case <id> <reason>`.",
+    ):
 
-        userslist = ', '.join(x.name for x in users)
+        userslist = ", ".join(x.name for x in users)
         try:
             for x in users:
                 await x.ban(reason=f"[{ctx.author}]: {reason}")
@@ -56,14 +62,20 @@ class moderation(commands.Cog):
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
             )
-        
+
         await ctx.channel.send(f"The following users have neen banned: {userslist}.")
 
-    @commands.command(name="masskick",usage="[@user] <reason>",description="Kick multiple people from your server at once.")
+    @commands.command(name="masskick")
     @commands.has_permissions(kick_members=True)
-    async def _masskick(self,ctx,users: commands.Greedy[discord.Member],*,reason="No reason provided. You can add a reason with `case <id> <reason>`."):
+    async def _masskick(
+        self,
+        ctx,
+        users: commands.Greedy[discord.Member],
+        *,
+        reason="No reason provided. You can add a reason with `case <id> <reason>`.",
+    ):
 
-        userslist = ', '.join(x.name for x in users)
+        userslist = ", ".join(x.name for x in users)
         try:
             for x in users:
                 await x.kick(reason=f"[{ctx.author}]: {reason}")
@@ -71,43 +83,50 @@ class moderation(commands.Cog):
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
             )
-        
+
         await ctx.channel.send(f"The following users have neen kicked: {userslist}.")
 
-    @commands.command(name="massmute",usage="[@user] <reason>",description="Mutes multiple people at once. Has a limit of **5** however.")
+    @commands.command(name="massmute")
     @commands.has_permissions(kick_members=True)
-    async def _massmute(self,ctx,users: commands.Greedy[discord.Member],*,reason="No reason provided. You can add a reason with `case <id> <reason>`."):
+    async def _massmute(
+        self,
+        ctx,
+        users: commands.Greedy[discord.Member],
+        *,
+        reason="No reason provided. You can add a reason with `case <id> <reason>`.",
+    ):
 
         if len(users) > 5:
-            return await ctx.channel.send("No go my guy!!! This command has a limit of 5 users for **everyone**, sorry.")
+            return await ctx.channel.send(
+                "No go my guy!!! This command has a limit of 5 users for **everyone**, sorry."
+            )
 
-        userslist = ', '.join(x.name for x in users)
+        userslist = ", ".join(x.name for x in users)
         async with ctx.bot.pool.acquire() as conn:
-            mute = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+            mute = await conn.fetchrow(
+                "SELECT * FROM guilds WHERE id = $1", ctx.channel.guild.id
+            )
 
             try:
                 mutedlist = []
-                muterole = ctx.channel.guild.get_role(mute['muterole'])
-                dontmuterole = ctx.channel.guild.get_role(mute['dontmute'])
+                muterole = ctx.channel.guild.get_role(mute["muterole"])
+                dontmuterole = ctx.channel.guild.get_role(mute["dontmute"])
 
                 for x in users:
                     if dontmuterole in x.roles:
                         continue
-                    await x.add_roles(muterole,reason=f"[{ctx.author}]: {reason}")
+                    await x.add_roles(muterole, reason=f"[{ctx.author}]: {reason}")
                     mutedlist.append(x)
             except Exception as err:
                 return await ctx.channel.send(
                     f"Don't expect me to know what happened >:)\n{err}"
                 )
-            
-            userslist = ', '.join(x.name for x in mutedlist)
+
+            userslist = ", ".join(x.name for x in mutedlist)
             await ctx.channel.send(f"The following users have neen muted: {userslist}.")
 
     @commands.command(
-        name="ban",
-        usage="@user <reason>",
-        description="Bans a user from your server. If you are looking to ban a user that isn't in your server view `forceban`.",
-        aliases=["banne", "disagreeing", "vac", "banish"],
+        name="ban", aliases=["banne", "disagreeing", "vac", "banish"],
     )
     @commands.has_permissions(ban_members=True)
     async def _ban(
@@ -118,9 +137,9 @@ class moderation(commands.Cog):
         reason="No reason provided. You can add a reason with `case <id> <reason>`.",
     ):
 
-        if not checks.above(self.bot,user,ctx.author):
+        if not checks.above(self.bot, user, ctx.author):
             return
-    
+
         try:
             await user.ban(reason=reason)
         except Exception as err:
@@ -139,11 +158,7 @@ class moderation(commands.Cog):
             time=datetime.utcnow(),
         )
 
-    @commands.command(
-        name="unban",
-        usage="(user id) <reason>",
-        description="Unban a user from your server.",
-    )
+    @commands.command(name="unban",)
     @commands.has_permissions(ban_members=True)
     async def _unban(
         self,
@@ -172,11 +187,7 @@ class moderation(commands.Cog):
             time=datetime.utcnow(),
         )
 
-    @commands.command(
-        name="softban",
-        usage="@user <reason>",
-        description="Bans then unbans a user from your server. Mostly used to wipe a user's messages.",
-    )
+    @commands.command(name="softban",)
     @commands.has_permissions(ban_members=True)
     async def _softban(
         self,
@@ -186,7 +197,7 @@ class moderation(commands.Cog):
         reason="No reason provided. You can add a reason with `case <id> <reason>`.",
     ):
 
-        if not checks.above(self.bot,user,ctx.author):
+        if not checks.above(self.bot, user, ctx.author):
             return
 
         try:
@@ -208,11 +219,7 @@ class moderation(commands.Cog):
             time=datetime.utcnow(),
         )
 
-    @commands.command(
-        name="forceban",
-        usage="(user id) <reason>",
-        description="Bans a user from your server even if they're not part of it.",
-    )
+    @commands.command(name="forceban",)
     @commands.has_permissions(ban_members=True)
     async def _forceban(
         self,
@@ -241,11 +248,7 @@ class moderation(commands.Cog):
             time=datetime.utcnow(),
         )
 
-    @commands.command(
-        name="kick",
-        usage="@user <reason>",
-        description="Remove a user from your server. (They can join back with an invite).",
-    )
+    @commands.command(name="kick",)
     @commands.has_permissions(kick_members=True)
     async def _kick(
         self,
@@ -255,7 +258,7 @@ class moderation(commands.Cog):
         reason="No reason provided. You can add a reason with `case <id> <reason>`.",
     ):
 
-        if not checks.above(self.bot,user,ctx.author):
+        if not checks.above(self.bot, user, ctx.author):
             return
 
         try:
@@ -274,30 +277,25 @@ class moderation(commands.Cog):
             time=datetime.utcnow(),
         )
 
-    @commands.group(
-        name="warn",
-        usage="@user <reason>",
-        description="Warn a user and enforece what you need to. I don't care :/",
-        inovoke_without_command=True
-    )
+    @commands.group(name="warn", inovoke_without_command=True)
     @commands.has_permissions(kick_members=True)
     async def _warn(
-        self,
-        ctx,
-        user: discord.Member,
-        *,
-        reason,
+        self, ctx, user: discord.Member, *, reason,
     ):
 
-        if not checks.above(self.bot,user,ctx.author):
+        if not checks.above(self.bot, user, ctx.author):
             return
 
         try:
-            await user.send(f"You've been warning in **{ctx.guild.name}** for:\n{reason}")
+            await user.send(
+                f"You've been warning in **{ctx.guild.name}** for:\n{reason}"
+            )
         except:
             pass
 
-        await Responder.in_line(ctx=ctx,user=user,action=ctx.command.name,reason=reason)
+        await Responder.in_line(
+            ctx=ctx, user=user, action=ctx.command.name, reason=reason
+        )
         await modlogs(
             self=self.bot,
             moderator=ctx.author,
@@ -308,57 +306,60 @@ class moderation(commands.Cog):
             time=datetime.utcnow(),
         )
 
-    @_warn.command(
-        name="nonotify",
-        usage="@user <reason>",
-        description="Warn a user and enforece what you need to. They are not notified.",
-        aliases=['nn']
-    )
+    @_warn.command(name="nonotify", aliases=["nn"])
     @commands.has_permissions(kick_members=True)
     async def _warn_nonotify(
+        self, ctx, user: discord.Member, *, reason,
+    ):
+
+        if not checks.above(self.bot, user, ctx.author):
+            return
+
+        await ctx.channel.send(
+            f"**{ctx.channel.guild}** | {ctx.author} warned {user} for Indefinitely. ({reason})"
+        )
+        await modlogs(
+            self=self.bot,
+            moderator=ctx.author,
+            user=user,
+            reason=reason,
+            type=ctx.command.name.capitalize(),
+            case=None,
+            time=datetime.utcnow(),
+        )
+
+    @commands.command(name="mute")
+    @commands.has_permissions(manage_messages=True)
+    async def _mute(
         self,
         ctx,
         user: discord.Member,
         *,
-        reason,
+        reason="No reason provided. You can add a reason with `case <id> <reason>`.",
     ):
 
-        if not checks.above(self.bot,user,ctx.author):
-            return
-
-        await ctx.channel.send(f"**{ctx.channel.guild}** | {ctx.author} warned {user} for Indefinitely. ({reason})")
-        await modlogs(
-            self=self.bot,
-            moderator=ctx.author,
-            user=user,
-            reason=reason,
-            type=ctx.command.name.capitalize(),
-            case=None,
-            time=datetime.utcnow(),
-        )
-
-    @commands.command(name="mute",usage="@user <reason>",description="Add your server's mute role to a user to stop them from talking :sunglasses:")
-    @commands.has_permissions(manage_messages=True)
-    async def _mute(self,ctx,user:discord.Member,*,reason="No reason provided. You can add a reason with `case <id> <reason>`.",):
-
-        if not checks.above(self.bot,user,ctx.author):
+        if not checks.above(self.bot, user, ctx.author):
             return
 
         async with ctx.bot.pool.acquire() as conn:
-            mute = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+            mute = await conn.fetchrow(
+                "SELECT * FROM guilds WHERE id = $1", ctx.channel.guild.id
+            )
 
             try:
-                muterole = ctx.channel.guild.get_role(mute['muterole'])
-                dontmuterole = ctx.channel.guild.get_role(mute['dontmute'])
+                muterole = ctx.channel.guild.get_role(mute["muterole"])
+                dontmuterole = ctx.channel.guild.get_role(mute["dontmute"])
 
                 if dontmuterole in user.roles:
-                    return await ctx.channel.send(f"Idiots some days. You can't mute {user}, they got the sepcial don't mute role.")
+                    return await ctx.channel.send(
+                        f"Idiots some days. You can't mute {user}, they got the sepcial don't mute role."
+                    )
                 await user.add_roles(muterole)
             except Exception as err:
                 return await ctx.channel.send(
                     f"Don't expect me to know what happened >:)\n{err}"
                 )
-            
+
             await ctx.channel.send(f"{user} has been muted. (Okay?)")
             await modlogs(
                 self=self.bot,
@@ -368,25 +369,35 @@ class moderation(commands.Cog):
                 type=ctx.command.name.capitalize(),
                 case=None,
                 time=datetime.utcnow(),
-                role=muterole
+                role=muterole,
             )
 
-    @commands.command(name="hardmute",usage="@user <reason>",description="Remove a users role and add the muted role.")
+    @commands.command(name="hardmute")
     @commands.has_permissions(manage_messages=True)
-    async def _hardmute(self,ctx,user:discord.Member,*,reason="No reason provided. You can add a reason with `case <id> <reason>`.",):
+    async def _hardmute(
+        self,
+        ctx,
+        user: discord.Member,
+        *,
+        reason="No reason provided. You can add a reason with `case <id> <reason>`.",
+    ):
 
-        if not checks.above(self.bot,user,ctx.author):
+        if not checks.above(self.bot, user, ctx.author):
             return
 
         async with ctx.bot.pool.acquire() as conn:
-            mute = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+            mute = await conn.fetchrow(
+                "SELECT * FROM guilds WHERE id = $1", ctx.channel.guild.id
+            )
 
             try:
-                muterole = ctx.channel.guild.get_role(mute['muterole'])
-                dontmuterole = ctx.channel.guild.get_role(mute['dontmute'])
+                muterole = ctx.channel.guild.get_role(mute["muterole"])
+                dontmuterole = ctx.channel.guild.get_role(mute["dontmute"])
 
                 if dontmuterole in user.roles:
-                    return await ctx.channel.send(f"Idiots some days. You can't mute {user}, they got the sepcial don't mute role.")
+                    return await ctx.channel.send(
+                        f"Idiots some days. You can't mute {user}, they got the sepcial don't mute role."
+                    )
                 for x in user.roles:
                     try:
                         await user.remove_roles(x)
@@ -398,7 +409,7 @@ class moderation(commands.Cog):
                 return await ctx.channel.send(
                     f"Don't expect me to know what happened >:)\n{err}"
                 )
-            
+
             await ctx.channel.send(f"{user} has been muted. (Okay?)")
             await modlogs(
                 self=self.bot,
@@ -408,33 +419,44 @@ class moderation(commands.Cog):
                 type=ctx.command.name.capitalize(),
                 case=None,
                 time=datetime.utcnow(),
-                role=muterole
+                role=muterole,
             )
 
-
-    @commands.command(name="supermute",usage="@user <reason>",description="Mute a user from **1.** speaking in voice channels and **2.** chatting in text channels")
+    @commands.command(name="supermute")
     @commands.has_permissions(manage_messages=True)
-    async def _supermute(self,ctx,user:discord.Member,*,reason="No reason provided. You can add a reason with `case <id> <reason>`.",):
+    async def _supermute(
+        self,
+        ctx,
+        user: discord.Member,
+        *,
+        reason="No reason provided. You can add a reason with `case <id> <reason>`.",
+    ):
 
-        if not checks.above(self.bot,user,ctx.author):
+        if not checks.above(self.bot, user, ctx.author):
             return
 
         async with ctx.bot.pool.acquire() as conn:
-            mute = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+            mute = await conn.fetchrow(
+                "SELECT * FROM guilds WHERE id = $1", ctx.channel.guild.id
+            )
 
             try:
-                muterole = ctx.channel.guild.get_role(mute['muterole'])
-                dontmuterole = ctx.channel.guild.get_role(mute['dontmute'])
+                muterole = ctx.channel.guild.get_role(mute["muterole"])
+                dontmuterole = ctx.channel.guild.get_role(mute["dontmute"])
 
                 if dontmuterole in user.roles:
-                    return await ctx.channel.send(f"Idiots some days. You can't mute {user}, they got the sepcial don't mute role.")
+                    return await ctx.channel.send(
+                        f"Idiots some days. You can't mute {user}, they got the sepcial don't mute role."
+                    )
                 await user.add_roles(muterole)
-                await user.edit(mute=True,reason=f"[Supermute by {ctx.author}]: {reason}")
+                await user.edit(
+                    mute=True, reason=f"[Supermute by {ctx.author}]: {reason}"
+                )
             except Exception as err:
                 return await ctx.channel.send(
                     f"Don't expect me to know what happened >:)\n{err}"
                 )
-            
+
             await ctx.channel.send(f"{user} has been muted. (Okay?)")
             await modlogs(
                 self=self.bot,
@@ -444,60 +466,88 @@ class moderation(commands.Cog):
                 type=ctx.command.name.capitalize(),
                 case=None,
                 time=datetime.utcnow(),
-                role=muterole
+                role=muterole,
             )
 
-    @commands.command(name="massvoicemute",usage="[@user] <reason>",description="Mass mute users from speaking in voice channels")
+    @commands.command(name="massvoicemute")
     @commands.has_permissions(manage_messages=True)
-    async def _massvoicemute(self,ctx,users:commands.Greedy[discord.Member],*,reason="No reason provided. You can add a reason with `case <id> <reason>`.",):
+    async def _massvoicemute(
+        self,
+        ctx,
+        users: commands.Greedy[discord.Member],
+        *,
+        reason="No reason provided. You can add a reason with `case <id> <reason>`.",
+    ):
 
         async with ctx.bot.pool.acquire() as conn:
-            mute = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+            mute = await conn.fetchrow(
+                "SELECT * FROM guilds WHERE id = $1", ctx.channel.guild.id
+            )
 
             try:
                 mutedlist = []
-                dontmuterole = ctx.channel.guild.get_role(mute['dontmute'])
+                dontmuterole = ctx.channel.guild.get_role(mute["dontmute"])
 
                 for x in users:
-                    if not checks.above(self.bot,x,ctx.author):
+                    if not checks.above(self.bot, x, ctx.author):
                         continue
                     if dontmuterole in x.roles:
                         continue
-                    await x.edit(mute=True,reason=f"[Massvoice mute by {ctx.author}]: {reason}")
+                    await x.edit(
+                        mute=True, reason=f"[Massvoice mute by {ctx.author}]: {reason}"
+                    )
                     mutedlist.append(x)
-            except Exception as err:
-                return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
-            
-            list = f"\n".join(f"{x} {x.id}" for x in mutedlist)
-            if len(list) > 1700:
-                await ctx.channel.send(f""":ok_hand: I have muted {len(mutedlist)} members.""")
-                for i in range(math.ceil(len(list)/1992)):
-                    chunk = list[(i-1) *1700:i*1992]
-                    await ctx.channel.send(f'```\n{chunk}\n```')
-            else:
-                await ctx.channel.send(f""":ok_hand: I have muted {len(mutedlist)} members.```{list}```""")
-
-    @commands.command(name="voicemute",usage="@user <reason>",description="Mute a user from speaking in a voice channel.")
-    @commands.has_permissions(manage_messages=True)
-    async def _voicemute(self,ctx,user:discord.Member,*,reason="No reason provided. You can add a reason with `case <id> <reason>`.",):
-
-        if not checks.above(self.bot,user,ctx.author):
-            return
-
-        async with ctx.bot.pool.acquire() as conn:
-            mute = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
-
-            try:
-                dontmuterole = ctx.channel.guild.get_role(mute['dontmute'])
-
-                if dontmuterole in user.roles:
-                    return await ctx.channel.send(f"Idiots some days. You can't mute {user}, they got the sepcial don't mute role.")
-                await user.edit(mute=True,reason=f"[ Voice mute by {ctx.author} ]: {reason}")
             except Exception as err:
                 return await ctx.channel.send(
                     f"Don't expect me to know what happened >:)\n{err}"
                 )
-            
+
+            list = f"\n".join(f"{x} {x.id}" for x in mutedlist)
+            if len(list) > 1700:
+                await ctx.channel.send(
+                    f""":ok_hand: I have muted {len(mutedlist)} members."""
+                )
+                for i in range(math.ceil(len(list) / 1992)):
+                    chunk = list[(i - 1) * 1700 : i * 1992]
+                    await ctx.channel.send(f"```\n{chunk}\n```")
+            else:
+                await ctx.channel.send(
+                    f""":ok_hand: I have muted {len(mutedlist)} members.```{list}```"""
+                )
+
+    @commands.command(name="voicemute")
+    @commands.has_permissions(manage_messages=True)
+    async def _voicemute(
+        self,
+        ctx,
+        user: discord.Member,
+        *,
+        reason="No reason provided. You can add a reason with `case <id> <reason>`.",
+    ):
+
+        if not checks.above(self.bot, user, ctx.author):
+            return
+
+        async with ctx.bot.pool.acquire() as conn:
+            mute = await conn.fetchrow(
+                "SELECT * FROM guilds WHERE id = $1", ctx.channel.guild.id
+            )
+
+            try:
+                dontmuterole = ctx.channel.guild.get_role(mute["dontmute"])
+
+                if dontmuterole in user.roles:
+                    return await ctx.channel.send(
+                        f"Idiots some days. You can't mute {user}, they got the sepcial don't mute role."
+                    )
+                await user.edit(
+                    mute=True, reason=f"[ Voice mute by {ctx.author} ]: {reason}"
+                )
+            except Exception as err:
+                return await ctx.channel.send(
+                    f"Don't expect me to know what happened >:)\n{err}"
+                )
+
             await ctx.channel.send(f"{user} has been **voice** muted. (Okay?)")
             await modlogs(
                 self=self.bot,
@@ -509,27 +559,39 @@ class moderation(commands.Cog):
                 time=datetime.utcnow(),
             )
 
-    @commands.command(name="voiceunmute",usage="@user <reason>",description="Allow a user to speak in voice channels again.")
+    @commands.command(name="voiceunmute")
     @commands.has_permissions(manage_messages=True)
-    async def _voiceunmute(self,ctx,user:discord.Member,*,reason="No reason provided. You can add a reason with `case <id> <reason>`.",):
+    async def _voiceunmute(
+        self,
+        ctx,
+        user: discord.Member,
+        *,
+        reason="No reason provided. You can add a reason with `case <id> <reason>`.",
+    ):
 
-        if not checks.above(self.bot,user,ctx.author):
+        if not checks.above(self.bot, user, ctx.author):
             return
 
         async with ctx.bot.pool.acquire() as conn:
-            mute = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+            mute = await conn.fetchrow(
+                "SELECT * FROM guilds WHERE id = $1", ctx.channel.guild.id
+            )
 
             try:
-                dontmuterole = ctx.channel.guild.get_role(mute['dontmute'])
+                dontmuterole = ctx.channel.guild.get_role(mute["dontmute"])
 
                 if dontmuterole in user.roles:
-                    return await ctx.channel.send(f"Idiots some days. You can't mute {user}, they got the sepcial don't mute role.")
-                await user.edit(mute=False,reason=f"[ Voice unmute by {ctx.author} ]: {reason}")
+                    return await ctx.channel.send(
+                        f"Idiots some days. You can't mute {user}, they got the sepcial don't mute role."
+                    )
+                await user.edit(
+                    mute=False, reason=f"[ Voice unmute by {ctx.author} ]: {reason}"
+                )
             except Exception as err:
                 return await ctx.channel.send(
                     f"Don't expect me to know what happened >:)\n{err}"
                 )
-            
+
             await ctx.channel.send(f"{user} has been **voice** unmuted. (Okay?)")
             await modlogs(
                 self=self.bot,
@@ -541,24 +603,32 @@ class moderation(commands.Cog):
                 time=datetime.utcnow(),
             )
 
-    @commands.command(name="unmute",usage="@user <reason>",description="Remove your server's mute role to allow the user to speak again, be nice!")
+    @commands.command(name="unmute")
     @commands.has_permissions(manage_messages=True)
-    async def _unmute(self,ctx,user:discord.Member,*,reason="No reason provided. You can add a reason with `case <id> <reason>`.",):
+    async def _unmute(
+        self,
+        ctx,
+        user: discord.Member,
+        *,
+        reason="No reason provided. You can add a reason with `case <id> <reason>`.",
+    ):
 
-        if not checks.above(self.bot,user,ctx.author):
+        if not checks.above(self.bot, user, ctx.author):
             return
 
         async with ctx.bot.pool.acquire() as conn:
-            mute = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+            mute = await conn.fetchrow(
+                "SELECT * FROM guilds WHERE id = $1", ctx.channel.guild.id
+            )
 
             try:
-                muterole = ctx.channel.guild.get_role(mute['muterole'])
+                muterole = ctx.channel.guild.get_role(mute["muterole"])
                 await user.remove_roles(muterole)
             except Exception as err:
                 return await ctx.channel.send(
                     f"Don't expect me to know what happened >:)\n{err}"
                 )
-            
+
             await ctx.channel.send(f"{user} has been unmuted. (happy? mr. nice)")
             await modlogs(
                 self=self.bot,
@@ -568,12 +638,10 @@ class moderation(commands.Cog):
                 type=ctx.command.name.capitalize(),
                 case=None,
                 time=datetime.utcnow(),
-                role=muterole
-            )         
+                role=muterole,
+            )
 
-    @commands.command(
-        name="history", usage="<@user>", description="Get a user's history."
-    )
+    @commands.command(name="history")
     @commands.has_permissions(administrator=True)
     async def _history(self, ctx, user: discord.User = None):
 
@@ -607,64 +675,79 @@ class moderation(commands.Cog):
             paginator = pagination.BotEmbedPaginator(ctx, pages)
             return await paginator.run()
 
-    @commands.command(
-        name="case",
-        usage="(case) <reason>",
-        description="Update a case's reason. :warning: You must be the mod who gave the case, it wont respond if you are not the mod.",
-    )
+    @commands.command(name="case",)
     @commands.has_permissions(administrator=True)
     async def _case(self, ctx, id: int, *, reason):
         async with ctx.bot.pool.acquire() as conn:
-            guild = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
-            if guild['modlogs']:
-                modlogs = self.bot.get_channel(guild['modlogs'])
-    
+            guild = await conn.fetchrow(
+                "SELECT * FROM guilds WHERE id = $1", ctx.channel.guild.id
+            )
+            if guild["modlogs"]:
+                modlogs = self.bot.get_channel(guild["modlogs"])
+
                 try:
-                    data = await conn.fetchrow("UPDATE infractions SET reason = $1 WHERE id = $2 AND guild = $3 RETURNING *",reason,id,ctx.channel.guild.id)
-                    modlogs_message = await modlogs.fetch_message(data['modlogs'])
-                    role = ctx.guild.get_role(guild['muterole'])
-                    user = await self.bot.fetch_user(data['target'])
-                    
-                    await modlogs_message.edit(content=dedent(f"""
+                    data = await conn.fetchrow(
+                        "UPDATE infractions SET reason = $1 WHERE id = $2 AND guild = $3 RETURNING *",
+                        reason,
+                        id,
+                        ctx.channel.guild.id,
+                    )
+                    modlogs_message = await modlogs.fetch_message(data["modlogs"])
+                    role = ctx.guild.get_role(guild["muterole"])
+                    user = await self.bot.fetch_user(data["target"])
+
+                    await modlogs_message.edit(
+                        content=dedent(
+                            f"""
                     **{data['type']}** | Case {data['id']}
                     **User**: {user} ({user.id}) ({user.mention})
                     **Reason**: {reason}
                     **Responsible Moderator**: {ctx.author}
                     {f"**Role**: {role.name} ({role.id})" if data['type'] == "Mute" or "Unmute" else ""}
-                    """))
+                    """
+                        )
+                    )
                 except Exception as err:
                     return await ctx.channel.send(
                         f"Don't expect me to know what happened >:)\n{err}"
                     )
 
-            await ctx.channel.send(f"👌")     
+            await ctx.channel.send(f"👌")
 
-    @commands.group(name="infractions", description="Run help on me for all my commands.",invoke_without_command=True)
-    async def _infractions(self,ctx):
+    @commands.group(name="infractions", invoke_without_command=True)
+    async def _infractions(self, ctx):
         return
 
-    @_infractions.command(name="delete", description="Delete all your server's cases. **THIS CANNOT BE UNDONE**")
+    @_infractions.command(name="delete")
     @commands.has_permissions(administrator=True)
-    async def _delete(self,ctx):
+    async def _delete(self, ctx):
 
         try:
-            await self.bot.pool.execute("DELETE FROM infractions WHERE guild = $1",ctx.channel.guild.id)
+            await self.bot.pool.execute(
+                "DELETE FROM infractions WHERE guild = $1", ctx.channel.guild.id
+            )
             del self.bot.cases[ctx.channel.guild.id]
         except Exception as err:
-            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
 
-        await ctx.channel.send(f"👌")             
+        await ctx.channel.send(f"👌")
 
-    @_infractions.command(name="archive", description="Archive all your server's cases to a CSV file.")
+    @_infractions.command(name="archive")
     @commands.has_permissions(manage_guild=True)
-    async def _archive(self,ctx):
+    async def _archive(self, ctx):
 
         try:
             async with ctx.bot.pool.acquire() as conn:
-                infractions = await conn.fetch("SELECT * FROM infractions WHERE guild = $1",ctx.channel.guild.id)     
+                infractions = await conn.fetch(
+                    "SELECT * FROM infractions WHERE guild = $1", ctx.channel.guild.id
+                )
 
                 if not infractions:
-                    return await ctx.channel.send("Your server doesn't have any infractions smart guy")
+                    return await ctx.channel.send(
+                        "Your server doesn't have any infractions smart guy"
+                    )
 
                 with open(
                     f"wrenchboat/assets/{ctx.guild.name}_{ctx.guild.id}.csv", "w+"
@@ -674,25 +757,19 @@ class moderation(commands.Cog):
                     )
 
                     filewriter.writerow(
-                        [
-                            "Moderator",
-                            "User",
-                            "Type",
-                            "Reason",
-                            "Time",
-                        ]
+                        ["Moderator", "User", "Type", "Reason", "Time",]
                     )
                     for x in infractions:
-                        moderator = ctx.channel.guild.get_member(x['moderator'])
-                        user = await self.bot.fetch_user(x['target'])
+                        moderator = ctx.channel.guild.get_member(x["moderator"])
+                        user = await self.bot.fetch_user(x["target"])
                         try:
                             filewriter.writerow(
                                 [
                                     f"{moderator} ({moderator.id})",
                                     f"{user} ({user.id})",
-                                    x['type'],
-                                    x['reason'],
-                                    x['time_punsihed'],
+                                    x["type"],
+                                    x["reason"],
+                                    x["time_punsihed"],
                                 ]
                             )
                         except:
@@ -714,71 +791,80 @@ class moderation(commands.Cog):
         except Exception as err:
             return await ctx.channel.send(
                 f"Don't expect me to know what happened >:)\n{err}"
-            )        
+            )
 
-    @commands.group(
-        name="note",
-        usage="@user <reason>",
-        description="Add a note to a user can be about literally anything.",
-        invoke_without_command=True
-    )
+    @commands.group(name="note", invoke_without_command=True)
     @commands.has_permissions(manage_messages=True)
     async def _note(
-        self,
-        ctx,
-        user: discord.Member,
-        *,
-        reason,
+        self, ctx, user: discord.Member, *, reason,
     ):
 
-        if not checks.above(self.bot,user,ctx.author):
+        if not checks.above(self.bot, user, ctx.author):
             return
 
         try:
-            await self.bot.pool.execute(f"INSERT INTO notes(guild,author,target,content,time_given) VALUES($1,$2,$3,$4,$5)",ctx.channel.guild.id,ctx.author.id,user.id,reason,datetime.utcnow())
+            await self.bot.pool.execute(
+                f"INSERT INTO notes(guild,author,target,content,time_given) VALUES($1,$2,$3,$4,$5)",
+                ctx.channel.guild.id,
+                ctx.author.id,
+                user.id,
+                reason,
+                datetime.utcnow(),
+            )
         except Exception as err:
-            return await ctx.channel.send(f"Don't expect me to know what happened >:)\n{err}")     
+            return await ctx.channel.send(
+                f"Don't expect me to know what happened >:)\n{err}"
+            )
 
         await ctx.channel.send(f"📋")
-    
-    @_note.command(name="nfo",usage="(note id)",description="Get info on a user's note. Grammar level - 100%")
+
+    @_note.command(name="info")
     @commands.has_permissions(manage_messages=True)
-    async def _note_nfo(self,ctx,id:int):
+    async def _note_info(self, ctx, id: int):
 
         async with ctx.bot.pool.acquire() as conn:
 
-            selected = await conn.fetchrow("SELECT * FROM notes WHERE id = $1",id)
+            selected = await conn.fetchrow("SELECT * FROM notes WHERE id = $1", id)
 
             try:
-                await ctx.channel.send(dedent(f"""
+                await ctx.channel.send(
+                    dedent(
+                        f"""
                 📋 **{selected['id']}**
                 **User**: {await self.bot.fetch_user(selected['target'])} ({selected['target']}) (<@{selected['target']}>)
                 **Moderator**: {await self.bot.fetch_user(selected['author'])}
                 **Note**: {selected['content']}
-                """),allowed_mentions=discord.AllowedMentions(
-                everyone=False, roles=False, users=False
-            ),)
+                """
+                    ),
+                    allowed_mentions=discord.AllowedMentions(
+                        everyone=False, roles=False, users=False
+                    ),
+                )
             except Exception as err:
                 print(err)
 
-    @_note.command(name="delete",usage="(note id)",description="Delete a note with the matching id..")
+    @_note.command(name="delete")
     @commands.has_permissions(manage_messages=True)
-    async def _note_delete(self,ctx,id:int):
+    async def _note_delete(self, ctx, id: int):
 
         async with ctx.bot.pool.acquire() as conn:
             try:
-                await conn.fetchrow("DELETE FROM notes WHERE id = $1",id)
+                await conn.fetchrow("DELETE FROM notes WHERE id = $1", id)
             except Exception as err:
                 print(err)
 
             await ctx.channel.send(":ok_hand:")
 
-    @_note.command(name="search",usage="(user)",description="Search for notes on a specific user")
+    @_note.command(name="search")
     @commands.has_permissions(manage_messages=True)
-    async def _note_search(self,ctx,user:discord.User):
+    async def _note_search(self, ctx, user: discord.User):
 
         async with ctx.bot.pool.acquire() as conn:
-            selected = await conn.fetch("SELECT * FROM notes WHERE guild = $1 AND target = $2",ctx.channel.guild.id,user.id)
+            selected = await conn.fetch(
+                "SELECT * FROM notes WHERE guild = $1 AND target = $2",
+                ctx.channel.guild.id,
+                user.id,
+            )
             if not selected:
                 return await ctx.channel.send("Nope! They are clean!!!!")
             list = ""
@@ -789,11 +875,13 @@ class moderation(commands.Cog):
 
                 if len(list) > 1700:
                     await ctx.channel.send(f"""I am now showing you {user}'s notes!""")
-                    for i in range(math.ceil(len(list)/1992)):
-                        chunk = list[(i-1) *1700:i*1992]
-                        await ctx.channel.send(f'```\n{chunk}\n```')
+                    for i in range(math.ceil(len(list) / 1992)):
+                        chunk = list[(i - 1) * 1700 : i * 1992]
+                        await ctx.channel.send(f"```\n{chunk}\n```")
                 else:
-                    await ctx.channel.send(f"""I am now showing you {user}'s notes!```{list}```""")
+                    await ctx.channel.send(
+                        f"""I am now showing you {user}'s notes!```{list}```"""
+                    )
             except Exception as err:
                 print(err)
 

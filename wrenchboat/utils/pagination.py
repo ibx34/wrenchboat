@@ -8,7 +8,12 @@ from typing import List
 class EmbedPaginator:
     """ Represents an interactive menu containing multiple embeds. """
 
-    def __init__(self, client: discord.Client, pages: [discord.Embed], message: discord.Message = None):
+    def __init__(
+        self,
+        client: discord.Client,
+        pages: [discord.Embed],
+        message: discord.Message = None,
+    ):
         """
         Initialize a new EmbedPaginator.
 
@@ -22,7 +27,7 @@ class EmbedPaginator:
         self.pages = pages
         self.message = message
 
-        self.control_emojis = ('⏮', '◀', '▶', '⏭', '⏹')
+        self.control_emojis = ("⏮", "◀", "▶", "⏭", "⏹")
 
     @property
     def formatted_pages(self):
@@ -32,9 +37,14 @@ class EmbedPaginator:
                 page.set_footer(text=f"({pages.index(page)+1}/{len(pages)})")
             else:
                 if page.footer.icon_url == discord.Embed.Empty:
-                    page.set_footer(text=f"{page.footer.text} - ({pages.index(page)+1}/{len(pages)})")
+                    page.set_footer(
+                        text=f"{page.footer.text} - ({pages.index(page)+1}/{len(pages)})"
+                    )
                 else:
-                    page.set_footer(icon_url=page.footer.icon_url, text=f"{page.footer.text} - ({pages.index(page)+1}/{len(pages)})")
+                    page.set_footer(
+                        icon_url=page.footer.icon_url,
+                        text=f"{page.footer.text} - ({pages.index(page)+1}/{len(pages)})",
+                    )
         return pages
 
     async def run(self, users: List[discord.User], channel: discord.TextChannel = None):
@@ -81,9 +91,13 @@ class EmbedPaginator:
 
         while True:
             try:
-                reaction, user = await self._client.wait_for('reaction_add', check=check, timeout=100)
+                reaction, user = await self._client.wait_for(
+                    "reaction_add", check=check, timeout=100
+                )
             except asyncio.TimeoutError:
-                if not isinstance(channel, discord.channel.DMChannel) and not isinstance(channel, discord.channel.GroupChannel):
+                if not isinstance(
+                    channel, discord.channel.DMChannel
+                ) and not isinstance(channel, discord.channel.GroupChannel):
                     await self.message.clear_reactions()
                 return
 
@@ -94,10 +108,18 @@ class EmbedPaginator:
                 load_page_index = 0
 
             elif emoji == self.control_emojis[1]:
-                load_page_index = current_page_index - 1 if current_page_index > 0 else current_page_index
+                load_page_index = (
+                    current_page_index - 1
+                    if current_page_index > 0
+                    else current_page_index
+                )
 
             elif emoji == self.control_emojis[2]:
-                load_page_index = current_page_index + 1 if current_page_index < max_index else current_page_index
+                load_page_index = (
+                    current_page_index + 1
+                    if current_page_index < max_index
+                    else current_page_index
+                )
 
             elif emoji == self.control_emojis[3]:
                 load_page_index = max_index
@@ -107,7 +129,9 @@ class EmbedPaginator:
                 return
 
             await self.message.edit(embed=self.formatted_pages[load_page_index])
-            if not isinstance(channel, discord.channel.DMChannel) and not isinstance(channel, discord.channel.GroupChannel):
+            if not isinstance(channel, discord.channel.DMChannel) and not isinstance(
+                channel, discord.channel.GroupChannel
+            ):
                 await self.message.remove_reaction(reaction, user)
 
             current_page_index = load_page_index
@@ -130,7 +154,12 @@ class EmbedPaginator:
 
 
 class BotEmbedPaginator(EmbedPaginator):
-    def __init__(self, ctx: commands.Context, pages: [discord.Embed], message: discord.Message = None):
+    def __init__(
+        self,
+        ctx: commands.Context,
+        pages: [discord.Embed],
+        message: discord.Message = None,
+    ):
         """
         Initialize a new EmbedPaginator.
 
@@ -142,7 +171,9 @@ class BotEmbedPaginator(EmbedPaginator):
 
         super(BotEmbedPaginator, self).__init__(ctx.bot, pages, message)
 
-    async def run(self, channel: discord.TextChannel = None, users: List[discord.User] = None):
+    async def run(
+        self, channel: discord.TextChannel = None, users: List[discord.User] = None
+    ):
         """
         Runs the paginator.
 

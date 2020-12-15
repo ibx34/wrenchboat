@@ -39,15 +39,12 @@ from textblob import TextBlob
 
 from wrenchboat.utils.modlogs import modlogs
 
+
 class utility(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(
-        name="gibmeinfo",
-        usage="@user",
-        description="Get info on a user. (Don't add a user to get your own info).",
-    )
+    @commands.command(name="userinfo",)
     async def _userinfo(self, ctx, user: discord.Member = None):
         if user is None:
             user = ctx.author
@@ -77,9 +74,7 @@ class utility(commands.Cog):
                 f"Don't expect me to know what happened >:)\n{err}"
             )
 
-    @commands.command(
-        name="serverinfo", usage="None", description="Get info on your current server."
-    )
+    @commands.command(name="serverinfo")
     async def _serverinfo(self, ctx):
 
         embed = discord.Embed(color=0x99AAB5)
@@ -108,11 +103,7 @@ class utility(commands.Cog):
                 f"Don't expect me to know what happened >:)\n{err}"
             )
 
-    @commands.command(
-        name="avy",
-        usage="@user",
-        description="Get a user's avatar (Don't add a user to get your own avatar)",
-    )
+    @commands.command(name="avy",)
     async def _avy(self, ctx, user: discord.Member = None):
         if user is None:
             user = ctx.author
@@ -126,11 +117,7 @@ class utility(commands.Cog):
                 f"Don't expect me to know what happened >:)\n{err}"
             )
 
-    @commands.command(
-        name="sql",
-        usage="query",
-        description="Execute some cute sql in Discord **WWOWOWOWOWO**",
-    )
+    @commands.command(name="sql",)
     @commands.is_owner()
     async def _sql(self, ctx, *, statement):
         async with self.bot.pool.acquire() as conn:
@@ -143,22 +130,14 @@ class utility(commands.Cog):
 
             await ctx.channel.send(":ok_hand:")
 
-    @commands.command(
-        name="bug",
-        usage="None",
-        description="Found a bug? Report it at the link provided.",
-    )
+    @commands.command(name="bug",)
     async def _bug(self, ctx):
 
         return await ctx.channel.send(
             "You can report a bug here: --> <https://rb.gy/h2kktv>! Thank you in advance"
         )
 
-    @commands.command(
-        name="support",
-        usage="None",
-        description="Need help? Join our support server and we will try our best",
-    )
+    @commands.command(name="support",)
     async def _support(self, ctx):
 
         return await ctx.channel.send(
@@ -170,19 +149,12 @@ class utility(commands.Cog):
     """
 
     @commands.group(
-        name="highlight",
-        description="Highlight words and get dmed when someone mentions it!",
-        invoke_without_command=True,
-        aliases=["hl"],
+        name="highlight", invoke_without_command=True, aliases=["hl"],
     )
     async def _highlight(self, ctx):
         return
 
-    @_highlight.command(
-        name="add",
-        usage="(word or phrase)",
-        description="Add a word or phrase to your highligh list.",
-    )
+    @_highlight.command()
     async def _add(self, ctx, *, word: str):
 
         if len(word) > 2000:
@@ -222,11 +194,7 @@ class utility(commands.Cog):
 
             await ctx.channel.send(f":ok_hand:")
 
-    @_highlight.command(
-        name="delete",
-        usage="(word or phrase)",
-        description="Delete a previously highlighted word or phrase",
-    )
+    @_highlight.command(name="delete",)
     async def _delete(self, ctx, *, word: str):
         async with self.bot.pool.acquire() as conn:
             highlight = await conn.fetchrow(
@@ -256,9 +224,7 @@ class utility(commands.Cog):
 
             await ctx.channel.send(f":ok_hand: (deleted ig)")
 
-    @_highlight.command(
-        name="clear", description="Delete all your highlighted words for the server."
-    )
+    @_highlight.command(name="clear")
     async def _clear(self, ctx):
         async with self.bot.pool.acquire() as conn:
             try:
@@ -281,9 +247,7 @@ class utility(commands.Cog):
             await ctx.channel.send(f":ok_hand: I deleted all your highlighted words!!!")
 
     @commands.group(
-        name="emoji",
-        description="Enlarge an emoji to see it in all glory",
-        invoke_without_command=True,
+        name="emoji", invoke_without_command=True,
     )
     async def _emoji(self, ctx, emoji: discord.PartialEmoji):
 
@@ -317,11 +281,7 @@ class utility(commands.Cog):
 
         await ctx.channel.send(f"{emoji}")
 
-    @_emoji.command(
-        name="delete",
-        usage="(emoji)",
-        description="Delete an emoji from your server without going through Discord's UI",
-    )
+    @_emoji.command(name="delete",)
     @commands.has_permissions(manage_emojis=True)
     async def _delete(self, ctx, *, emoji: discord.Emoji):
 
@@ -336,7 +296,7 @@ class utility(commands.Cog):
 
         await ctx.channel.send(f":ok_hand:")
 
-    @commands.command(name="invite", description="Get some information on an invite")
+    @commands.command(name="invite")
     async def _invite(self, ctx, invite: discord.Invite):
 
         invite = await self.bot.fetch_invite(invite, with_counts=True)
@@ -350,18 +310,12 @@ class utility(commands.Cog):
 
         await ctx.channel.send(embed=embed)
 
-    @commands.command(
-        name="jellybean",
-        description="To make a long story short, I put a whole bag of Jelly Beans up my ass.",
-    )
+    @commands.command(name="jellybean",)
     async def _jellybean(self, ctx):
 
         await ctx.channel.send("https://youtu.be/D7eQzUrUMvU")
 
-    @commands.command(
-        name="topic",
-        description="Inform users of the channel's current topic. Great for keeping chats in-line.",
-    )
+    @commands.command(name="topic",)
     @commands.has_permissions(manage_channels=True)
     async def _topic(self, ctx):
 
@@ -376,53 +330,83 @@ class utility(commands.Cog):
             )
         except Exception as err:
             print(err)
-        
-    @commands.command(name="snipe",description="Snipe a message that was recently deleted")
-    async def _snipe(self, ctx):    
+
+    @commands.command(name="snipe")
+    async def _snipe(self, ctx):
 
         if not self.bot.snips.get(ctx.channel.id):
             return await ctx.channel.send("There is not snipes in this channnel :3")
 
-        embed = discord.Embed(color=self.bot.snips[ctx.channel.id]['author'].color,description=self.bot.snips[ctx.channel.id]['content'],timestamp=self.bot.snips[ctx.channel.id]['message_created'])
+        embed = discord.Embed(
+            color=self.bot.snips[ctx.channel.id]["author"].color,
+            description=self.bot.snips[ctx.channel.id]["content"],
+            timestamp=self.bot.snips[ctx.channel.id]["message_created"],
+        )
         embed.set_author(name=f"{ctx.author.display_name} sniped a message!")
-        embed.set_footer(text=self.bot.snips[ctx.channel.id]['author'],icon_url=self.bot.snips[ctx.channel.id]['author'].avatar_url)
+        embed.set_footer(
+            text=self.bot.snips[ctx.channel.id]["author"],
+            icon_url=self.bot.snips[ctx.channel.id]["author"].avatar_url,
+        )
 
         await ctx.channel.send(embed=embed)
         del self.bot.snips[ctx.channel.id]
 
-    @commands.command(name="trasnlatembed",description="Translate an embed to english.",usage="(message id)",aliases=['translateembed','tembed'])
-    async def _translateembed(self,ctx,message:discord.Message):
+    @commands.command(name="trasnlatembed", aliases=["translateembed", "tembed"])
+    async def _translateembed(self, ctx, message: discord.Message):
 
         if not message.embeds:
-            return await ctx.channel.send("That's weird... I couldn't find any embeds on that message!!!")
+            return await ctx.channel.send(
+                "That's weird... I couldn't find any embeds on that message!!!"
+            )
 
         field_list = []
         old_embed = message.embeds[0].to_dict()
-        if old_embed.get('description'):
-            old_embed['description'] = str(TextBlob(old_embed['description']).translate(to="en"))
-        if old_embed.get('title'):
-            old_embed['title'] = str(TextBlob(old_embed['title']).translate(to="en"))
-        if old_embed.get('author'):
-            old_embed['author']['name'] = str(TextBlob(old_embed['author']['name']).translate(to="en"))
-        if old_embed.get('footer'):
-            old_embed['footer']['text'] = str(TextBlob(old_embed['footer']['text']).translate(to="en"))
-        if old_embed.get('fields'):
-            for x in range(len(old_embed['fields'])):
-                field_list.append({"name": str(TextBlob(old_embed['fields'][x]['name']).translate(to="en")), "value": str(TextBlob(old_embed['fields'][x]['value']).translate(to="en"))})
+        if old_embed.get("description"):
+            old_embed["description"] = str(
+                TextBlob(old_embed["description"]).translate(to="en")
+            )
+        if old_embed.get("title"):
+            old_embed["title"] = str(TextBlob(old_embed["title"]).translate(to="en"))
+        if old_embed.get("author"):
+            old_embed["author"]["name"] = str(
+                TextBlob(old_embed["author"]["name"]).translate(to="en")
+            )
+        if old_embed.get("footer"):
+            old_embed["footer"]["text"] = str(
+                TextBlob(old_embed["footer"]["text"]).translate(to="en")
+            )
+        if old_embed.get("fields"):
+            for x in range(len(old_embed["fields"])):
+                field_list.append(
+                    {
+                        "name": str(
+                            TextBlob(old_embed["fields"][x]["name"]).translate(to="en")
+                        ),
+                        "value": str(
+                            TextBlob(old_embed["fields"][x]["value"]).translate(to="en")
+                        ),
+                    }
+                )
 
-            old_embed['fields'] = field_list
+            old_embed["fields"] = field_list
         new_embed = discord.Embed.from_dict(data=old_embed)
         await ctx.channel.send(embed=new_embed)
-    
-    @commands.command(name="translate",description="Translate something into English.",usage="(to translate)")
-    async def _translate(self,ctx,*,statement):
-        
+
+    @commands.command(name="translate")
+    async def _translate(self, ctx, *, statement):
+
         if len(statement) > 1500:
             return await ctx.channel.send("No. Use less than 1500 characters idot.")
 
-        embed = discord.Embed(color=ctx.author.color,description=str(TextBlob(statement).translate(to="en")))
-        embed.set_author(name=f"Triggered by {ctx.author.name}",icon_url=ctx.author.avatar_url)
+        embed = discord.Embed(
+            color=ctx.author.color,
+            description=str(TextBlob(statement).translate(to="en")),
+        )
+        embed.set_author(
+            name=f"Triggered by {ctx.author.name}", icon_url=ctx.author.avatar_url
+        )
         await ctx.channel.send(embed=embed)
-    
-def setup(bot): 
+
+
+def setup(bot):
     bot.add_cog(utility(bot))

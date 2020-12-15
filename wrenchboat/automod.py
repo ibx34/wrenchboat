@@ -29,6 +29,7 @@ from discord.ext import commands
 from wrenchboat.assets.words import list
 from wrenchboat.logging import logging
 
+
 class Switch(object):
     def __init__(self, user, message, bot):
         self.message = message
@@ -43,11 +44,14 @@ class Switch(object):
         return await self.message.delete()
 
     async def ban(self):
-        return await self.user.ban(reason=f"[AutoModeration]: {self.message.author} ({self.message.author.id})")
+        return await self.user.ban(
+            reason=f"[AutoModeration]: {self.message.author} ({self.message.author.id})"
+        )
 
     async def kick(self):
-        return await self.user.kick(reason=f"[AutoModeration]: {self.message.author} ({self.message.author.id})")
-
+        return await self.user.kick(
+            reason=f"[AutoModeration]: {self.message.author} ({self.message.author.id})"
+        )
 
     async def mute(self):
         async with self.bot.pool.acquire() as conn:
@@ -63,11 +67,13 @@ class Switch(object):
                     return
 
                 return await self.user.add_roles(
-                    muted, reason=f'[AutoModeration]: {self.message.author} ({self.message.author.id})'
+                    muted,
+                    reason=f"[AutoModeration]: {self.message.author} ({self.message.author.id})",
                 )
             except:
                 return
-                
+
+
 class AutoModeration(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -88,17 +94,27 @@ class AutoModeration(commands.Cog):
         - currently ignores embeds. Planned on making an option for this.
         """
 
-        if self.bot.automod[message.guild.id].get('antinvite'):
+        if self.bot.automod[message.guild.id].get("antinvite"):
 
-            check = re.search(r"((https?:\/\/)?discord\.gg\/)|(https?:\/\/discord\.com\/invite\/)|(https?:\/\/discordapp\.com\/invite\/)([a-zA-Z0-9\-]+)", message.content)
+            check = re.search(
+                r"((https?:\/\/)?discord\.gg\/)|(https?:\/\/discord\.com\/invite\/)|(https?:\/\/discordapp\.com\/invite\/)([a-zA-Z0-9\-]+)",
+                message.content,
+            )
             if check:
                 await Switch(
                     user=message.author, message=message, bot=self.bot
-                ).Actions(action=self.bot.automod[message.guild.id]['antinvite'])
-                await logging.automod_logs(action=self.bot.automod[message.guild.id]['antinvite'],user=message.author,channel=message.channel,message=message,trigger="Anti Invite",bot=self.bot)
+                ).Actions(action=self.bot.automod[message.guild.id]["antinvite"])
+                await logging.automod_logs(
+                    action=self.bot.automod[message.guild.id]["antinvite"],
+                    user=message.author,
+                    channel=message.channel,
+                    message=message,
+                    trigger="Anti Invite",
+                    bot=self.bot,
+                )
             else:
                 return
-                
+
             if self.bot.automod.get(message.guild.id) is None:
                 return
 
@@ -109,27 +125,47 @@ class AutoModeration(commands.Cog):
         - searches for all words in wrenchboat/assets/words.py
         """
 
-        if self.bot.automod[message.guild.id].get('antiprofanity'):
+        if self.bot.automod[message.guild.id].get("antiprofanity"):
 
             for x in list:
                 if x in message.content:
 
                     await Switch(
                         user=message.author, message=message, bot=self.bot
-                    ).Actions(action=self.bot.automod[message.guild.id]['antiprofanity'])
-                    await logging.automod_logs(action=self.bot.automod[message.guild.id]['antiprofanity'],user=message.author,channel=message.channel,message=message,trigger="Anti Profanity",bot=self.bot)
+                    ).Actions(
+                        action=self.bot.automod[message.guild.id]["antiprofanity"]
+                    )
+                    await logging.automod_logs(
+                        action=self.bot.automod[message.guild.id]["antiprofanity"],
+                        user=message.author,
+                        channel=message.channel,
+                        message=message,
+                        trigger="Anti Profanity",
+                        bot=self.bot,
+                    )
         """
         Anti Massping
 
         - Only fires if the amount of mentions in a message are over the set amount
         """
 
-        if self.bot.automod[message.guild.id].get('antimassping'):
-            if len(message.raw_mentions) >= int(self.bot.automod[message.guild.id]['antimassping']['amount']):
+        if self.bot.automod[message.guild.id].get("antimassping"):
+            if len(message.raw_mentions) >= int(
+                self.bot.automod[message.guild.id]["antimassping"]["amount"]
+            ):
                 await Switch(
                     user=message.author, message=message, bot=self.bot
-                ).Actions(action=self.bot.automod[message.guild.id]['antimassping']['action'])                
-                await logging.automod_logs(action=self.bot.automod[message.guild.id]['antimassping']['action'],user=message.author,channel=message.channel,message=message,trigger="Anti Massping",bot=self.bot)
+                ).Actions(
+                    action=self.bot.automod[message.guild.id]["antimassping"]["action"]
+                )
+                await logging.automod_logs(
+                    action=self.bot.automod[message.guild.id]["antimassping"]["action"],
+                    user=message.author,
+                    channel=message.channel,
+                    message=message,
+                    trigger="Anti Massping",
+                    bot=self.bot,
+                )
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -138,14 +174,15 @@ class AutoModeration(commands.Cog):
 
         user = before.guild.get_member(before.id)
         if user.nick:
-            if not self.bot.automod[after.guild.id]['antihoist']:
+            if not self.bot.automod[after.guild.id]["antihoist"]:
                 return
-                
+
             for x in config.characters:
                 if after.nick.startswith(x):
                     await user.edit(
                         nick=random.choice(config.clean_names), reason="Name sanitation"
                     )
+
 
 def setup(bot):
     bot.add_cog(AutoModeration(bot))

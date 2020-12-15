@@ -36,80 +36,120 @@ from wrenchboat.utils.checks import checks
 from wrenchboat.utils.modlogs import modlogs
 
 seconds_per_unit = {"s": 1, "m": 60, "h": 3600}
+
+
 def convert_to_seconds(s):
     return int(s[:-1]) * seconds_per_unit[s[-1]]
+
 
 class settings(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.group(name="prefixes",description="view your server's prefixes.",aliases=['prefix'],invoke_without_command=True)
+    @commands.group(name="prefixes", aliases=["prefix"], invoke_without_command=True)
     async def _wrench_prefix(self, ctx):
 
-        prefixes = await self.bot.pool.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
-        list = [f"{prefixes['prefixes'].index(x)}. {x}" for x in prefixes['prefixes']]
-        embed = discord.Embed(description='\n'.join(list),title=f"{ctx.channel.guild}'s prefixes")
+        prefixes = await self.bot.pool.fetchrow(
+            "SELECT * FROM guilds WHERE id = $1", ctx.channel.guild.id
+        )
+        list = [f"{prefixes['prefixes'].index(x)}. {x}" for x in prefixes["prefixes"]]
+        embed = discord.Embed(
+            description="\n".join(list), title=f"{ctx.channel.guild}'s prefixes"
+        )
 
         await ctx.channel.send(embed=embed)
 
-    @_wrench_prefix.command(name="add",description="Add a new prefix to your guild's prefix list.",usage="<prefix>")
+    @_wrench_prefix.command(name="add")
     @commands.has_permissions(administrator=True)
-    async def _wrench_prefixes_add(self, ctx, *, prefix:str):
+    async def _wrench_prefixes_add(self, ctx, *, prefix: str):
         if len(prefix) > 30:
-            return await ctx.channel.send("Prefixes may not be over **30** characters long.")
+            return await ctx.channel.send(
+                "Prefixes may not be over **30** characters long."
+            )
 
         async with self.bot.pool.acquire() as conn:
-            guild_data = await self.bot.pool.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
+            guild_data = await self.bot.pool.fetchrow(
+                "SELECT * FROM guilds WHERE id = $1", ctx.channel.guild.id
+            )
 
-            if len(guild_data['prefixes']) > 30:
-                return await ctx.channel.send(f"You can't have more than **30** prefixes!!!! CALM DOWN PLEASE!!!!!!!")
+            if len(guild_data["prefixes"]) > 30:
+                return await ctx.channel.send(
+                    f"You can't have more than **30** prefixes!!!! CALM DOWN PLEASE!!!!!!!"
+                )
 
-            if prefix in guild_data['prefixes']:
-                return await ctx.channel.send(f"That prefix is already in your server's list. You can remove it with `{ctx.prefix}prefix remove {prefix.lower()}`")
+            if prefix in guild_data["prefixes"]:
+                return await ctx.channel.send(
+                    f"That prefix is already in your server's list. You can remove it with `{ctx.prefix}prefix remove {prefix.lower()}`"
+                )
 
             try:
-                old_prefixes = [x for x in guild_data['prefixes']]
+                old_prefixes = [x for x in guild_data["prefixes"]]
                 old_prefixes.append(prefix)
-                new_prefixes = await conn.fetchrow("UPDATE guilds SET prefixes = $1 WHERE id = $2 RETURNING *",old_prefixes,ctx.channel.guild.id)
-                self.bot.prefixes[ctx.channel.guild.id] = new_prefixes['prefixes']
-                list = [f"{new_prefixes['prefixes'].index(x)}. {x}" for x in new_prefixes['prefixes']]
-                embed = discord.Embed(description='\n'.join(list),title=f"Updated {ctx.channel.guild}'s prefixes")
+                new_prefixes = await conn.fetchrow(
+                    "UPDATE guilds SET prefixes = $1 WHERE id = $2 RETURNING *",
+                    old_prefixes,
+                    ctx.channel.guild.id,
+                )
+                self.bot.prefixes[ctx.channel.guild.id] = new_prefixes["prefixes"]
+                list = [
+                    f"{new_prefixes['prefixes'].index(x)}. {x}"
+                    for x in new_prefixes["prefixes"]
+                ]
+                embed = discord.Embed(
+                    description="\n".join(list),
+                    title=f"Updated {ctx.channel.guild}'s prefixes",
+                )
                 await ctx.channel.send(embed=embed)
             except Exception as err:
                 return await ctx.channel.send(
                     f"Don't expect me to know what happened >:)\n{err}"
                 )
 
-    @_wrench_prefix.command(name="remove",description="Remove a new prefix to your guild's prefix list.",usage="<prefix>")
+    @_wrench_prefix.command(name="remove")
     @commands.has_permissions(administrator=True)
-    async def _wrench_prefixes_remove(self, ctx, *, prefix:str):
+    async def _wrench_prefixes_remove(self, ctx, *, prefix: str):
         if len(prefix) > 30:
-            return await ctx.channel.send("Prefixes may not be over **30** characters long.")
+            return await ctx.channel.send(
+                "Prefixes may not be over **30** characters long."
+            )
 
         async with self.bot.pool.acquire() as conn:
-            guild_data = await self.bot.pool.fetchrow("SELECT * FROM guilds WHERE id = $1",ctx.channel.guild.id)
-        
-            if prefix not in guild_data['prefixes'] or prefix.lower() in ['wrench','w!']:
-                return await ctx.channel.send(f"That prefix is not in your server's list. You can remove it with `{ctx.prefix}prefix add {prefix.lower()}`")
+            guild_data = await self.bot.pool.fetchrow(
+                "SELECT * FROM guilds WHERE id = $1", ctx.channel.guild.id
+            )
+
+            if prefix not in guild_data["prefixes"] or prefix.lower() in [
+                "wrench",
+                "w!",
+            ]:
+                return await ctx.channel.send(
+                    f"That prefix is not in your server's list. You can remove it with `{ctx.prefix}prefix add {prefix.lower()}`"
+                )
 
             try:
-                old_prefixes = [x for x in guild_data['prefixes']]
+                old_prefixes = [x for x in guild_data["prefixes"]]
                 old_prefixes.remove(prefix)
-                new_prefixes = await conn.fetchrow("UPDATE guilds SET prefixes = $1 WHERE id = $2 RETURNING *",old_prefixes,ctx.channel.guild.id)
-                self.bot.prefixes[ctx.channel.guild.id] = new_prefixes['prefixes']
-                list = [f"{new_prefixes['prefixes'].index(x)}. {x}" for x in new_prefixes['prefixes']]
-                embed = discord.Embed(description='\n'.join(list),title=f"Updated {ctx.channel.guild}'s prefixes")
+                new_prefixes = await conn.fetchrow(
+                    "UPDATE guilds SET prefixes = $1 WHERE id = $2 RETURNING *",
+                    old_prefixes,
+                    ctx.channel.guild.id,
+                )
+                self.bot.prefixes[ctx.channel.guild.id] = new_prefixes["prefixes"]
+                list = [
+                    f"{new_prefixes['prefixes'].index(x)}. {x}"
+                    for x in new_prefixes["prefixes"]
+                ]
+                embed = discord.Embed(
+                    description="\n".join(list),
+                    title=f"Updated {ctx.channel.guild}'s prefixes",
+                )
                 await ctx.channel.send(embed=embed)
             except Exception as err:
                 return await ctx.channel.send(
                     f"Don't expect me to know what happened >:)\n{err}"
                 )
 
-    @commands.command(
-        name="modlogs",
-        usage="<#channel>",
-        description="Sets your server's modlogs. The decancer command will also be logged here.",
-    )
+    @commands.command(name="modlogs",)
     @commands.has_permissions(administrator=True)
     async def _modlogs(self, ctx, *, channel: discord.TextChannel = None):
         async with self.bot.pool.acquire() as conn:
@@ -128,11 +168,7 @@ class settings(commands.Cog):
                 f"""OMG THAT TOOK EFFORT!!!! I set your modlogs to {channel.mention if channel is not None else "Disabled"}."""
             )
 
-    @commands.command(
-        name="messagelogs",
-        usage="<#channel>",
-        description="Set your server's message logs. Where messages that are deleted, pinned, or edited will be logged.",
-    )
+    @commands.command(name="messagelogs",)
     @commands.has_permissions(administrator=True)
     async def _messagelogs(self, ctx, *, channel: discord.TextChannel = None):
         async with self.bot.pool.acquire() as conn:
@@ -155,11 +191,7 @@ class settings(commands.Cog):
                 f"""OMG THAT TOOK EFFORT!!!! I set your message logs to {channel.mention if channel is not None else "Disabled"}."""
             )
 
-    @commands.command(
-        name="automodlogs",
-        usage="<#channel>",
-        description="Set your server's automod logs. When an automated action happens, this will be the place to look",
-    )
+    @commands.command(name="automodlogs",)
     @commands.has_permissions(administrator=True)
     async def _automodlogs(self, ctx, *, channel: discord.TextChannel = None):
         async with self.bot.pool.acquire() as conn:
@@ -182,11 +214,7 @@ class settings(commands.Cog):
                 f"""OMG THAT TOOK EFFORT!!!! I set your automod logs to {channel.mention if channel is not None else "Disabled"}."""
             )
 
-    @commands.command(
-        name="serverlogs",
-        usage="<#channel>",
-        description="Set your server's servers logs. General server actions will be logged here.",
-    )
+    @commands.command(name="serverlogs",)
     @commands.has_permissions(administrator=True)
     async def _serverlogs(self, ctx, *, channel: discord.TextChannel = None):
         async with self.bot.pool.acquire() as conn:
@@ -209,15 +237,18 @@ class settings(commands.Cog):
                 f"""OMG THAT TOOK EFFORT!!!! I set your message logs to {channel.mention if channel is not None else "Disabled"}."""
             )
 
-    @commands.command(
-        name="responsetype",
-        usage="<advanced,simple,normal,compact>",
-        description="Set your server's inline response type.",
-    )
+    @commands.command(name="responsetype",)
     @commands.has_permissions(administrator=True)
-    async def response_type(self, ctx, *, response_type: str="advanced"):
-        if response_type.lower() not in ['advanced','normal','compact','simple']:#,'even_simpler']:
-            return await ctx.channel.send(f"Please provide a valid option. {', '.join(['advanced','basic','compact','simple'])}")
+    async def response_type(self, ctx, *, response_type: str = "advanced"):
+        if response_type.lower() not in [
+            "advanced",
+            "normal",
+            "compact",
+            "simple",
+        ]:  # ,'even_simpler']:
+            return await ctx.channel.send(
+                f"Please provide a valid option. {', '.join(['advanced','basic','compact','simple'])}"
+            )
 
         async with self.bot.pool.acquire() as conn:
             try:
@@ -237,12 +268,14 @@ class settings(commands.Cog):
                 f"Your server's response type has been set to {response_type}"
             )
 
-    @commands.command(name="language",usage="<iso code>",description="Set your server's language, used in inline responses.")
+    @commands.command(name="language")
     @commands.has_permissions(administrator=True)
-    async def language(self, ctx, *, language_code:str="en"):    
-        supported_languages = ['en','es','la','it']
+    async def language(self, ctx, *, language_code: str = "en"):
+        supported_languages = ["en", "es", "la", "it"]
         if language_code.lower() not in supported_languages:
-            return await ctx.channel.send(f"Please provide a valid option. {', '.join(supported_languages)}")
+            return await ctx.channel.send(
+                f"Please provide a valid option. {', '.join(supported_languages)}"
+            )
 
         async with self.bot.pool.acquire() as conn:
             try:
@@ -261,11 +294,7 @@ class settings(commands.Cog):
                 f"Your server's language has been set to {language_code}"
             )
 
-    @commands.command(
-        name="archivecategory",
-        usage="(category id)",
-        description="Set your server's archive category. Essentially channels you archive will go here.",
-    )
+    @commands.command(name="archivecategory",)
     @commands.has_permissions(administrator=True)
     async def _archive_category(self, ctx, *, channel: discord.CategoryChannel = None):
         async with self.bot.pool.acquire() as conn:
@@ -284,11 +313,7 @@ class settings(commands.Cog):
                 f"""Ight, I set your server's "archive category" to {channel.name if channel is not None else "Disabled"}."""
             )
 
-    @commands.command(
-        name="muterole",
-        usage="@role",
-        description="Set your server's mute role. No the bot wont make one for you, don't be lazy.",
-    )
+    @commands.command(name="muterole",)
     @commands.has_permissions(administrator=True)
     async def _muterole(self, ctx, *, role: discord.Role = None):
         async with self.bot.pool.acquire() as conn:
@@ -310,11 +335,7 @@ class settings(commands.Cog):
                 ),
             )
 
-    @commands.command(
-        name="dontmuterole",
-        usage="@role",
-        description="Set your server's \"don't mute role\". This will make people with it un-muteable (Idea from discord bots).",
-    )
+    @commands.command(name="dontmuterole",)
     @commands.has_permissions(administrator=True)
     async def _dontmuterole(self, ctx, *, role: discord.Role = None):
         async with self.bot.pool.acquire() as conn:
@@ -336,10 +357,7 @@ class settings(commands.Cog):
                 ),
             )
 
-    @commands.command(
-        name="antihoist",
-        description="Stop users from hoisting by removing the special character and replacing it with a *very* nice name.",
-    )
+    @commands.command(name="antihoist",)
     @commands.has_permissions(administrator=True)
     async def _antihoist(self, ctx):
         async with self.bot.pool.acquire() as conn:
@@ -363,10 +381,7 @@ class settings(commands.Cog):
             await ctx.channel.send("👌")
 
     @commands.group(
-        name="antinvite",
-        usage="<BAN, KICK, MUTE, DELETE>",
-        description="Remove invites from your discord server with this epic machine! When enabled the bot will do the predefined action when a user curses",
-        invoke_without_command=True,
+        name="antinvite", invoke_without_command=True,
     )
     @commands.has_permissions(administrator=True)
     async def _antinvite(self, ctx, *, option):
@@ -394,9 +409,7 @@ class settings(commands.Cog):
                 f"Cool. I set your server's antinvite to {option.lower()}"
             )
 
-    @_antinvite.command(
-        name="disable", description="Disable antiprofanity for your server."
-    )
+    @_antinvite.command(name="disable")
     @commands.has_permissions(administrator=True)
     async def _antinvite_disable(self, ctx):
 
@@ -417,10 +430,7 @@ class settings(commands.Cog):
             await ctx.channel.send(f"👍")
 
     @commands.group(
-        name="antiprofanity",
-        usage="<BAN, KICK, MUTE, DELETE>",
-        description="Enable antiprofainity on your server. When enabled the bot will do the predefined action when a user curses (:warning: THIS CAN BE HARSH)",
-        invoke_without_command=True,
+        name="antiprofanity", invoke_without_command=True,
     )
     @commands.has_permissions(administrator=True)
     async def _antiprofanity(self, ctx, *, option):
@@ -448,9 +458,7 @@ class settings(commands.Cog):
                 f"Cool. I set your server's antiprofanity to {option.lower()}"
             )
 
-    @_antiprofanity.command(
-        name="disable", description="Disable antiprofanity for your server."
-    )
+    @_antiprofanity.command(name="disable")
     @commands.has_permissions(administrator=True)
     async def _antiprofanity_disable(self, ctx):
 
@@ -470,10 +478,7 @@ class settings(commands.Cog):
 
             await ctx.channel.send(f"👍")
 
-    @commands.command(
-        name="modrole",
-        description="Set your server's modrole. This is used for the `pingmod` command",
-    )
+    @commands.command(name="modrole",)
     @commands.has_permissions(administrator=True)
     async def _modrole(self, ctx, role: discord.Role = None):
         async with self.bot.pool.acquire() as conn:
@@ -495,9 +500,9 @@ class settings(commands.Cog):
                 ),
             )
 
-    @commands.group(name="antimassping",usage="(BAN,KICK,MUTE,DELETE) (amount of pings)",description="Punish a user if they ping one or more users.",invoke_without_command=True)
+    @commands.group(name="antimassping", invoke_without_command=True)
     @commands.has_permissions(administrator=True)
-    async def _antimassping(self, ctx, action:str,amount:int=3):
+    async def _antimassping(self, ctx, action: str, amount: int = 3):
 
         if action.lower() not in ["ban", "mute", "kick", "delete"]:
             return await ctx.channel.send(
@@ -512,7 +517,7 @@ class settings(commands.Cog):
                     f"{action.lower()}|{amount}",
                     ctx.channel.guild.id,
                 )
-                self.bot.automod[ctx.channel.guild.id]["antimassping"] =                 {
+                self.bot.automod[ctx.channel.guild.id]["antimassping"] = {
                     "amount": amount,
                     "action": action.lower(),
                 }
@@ -523,11 +528,9 @@ class settings(commands.Cog):
 
             await ctx.channel.send(
                 f"Cool. I set your server's antimassping to {action.lower()}"
-            )   
+            )
 
-    @_antimassping.command(
-        name="disable", description="Disable antimassping for your server."
-    )
+    @_antimassping.command(name="disable",)
     @commands.has_permissions(administrator=True)
     async def _antimassping_disable(self, ctx):
 
@@ -545,12 +548,9 @@ class settings(commands.Cog):
                     f"Don't expect me to know what happened >:)\n{err}"
                 )
 
-            await ctx.channel.send(f"👍")        
+            await ctx.channel.send(f"👍")
 
-    @commands.command(
-        name="pingmod",
-        description="Ping a random **online** moderator from your server's mod role (Inspired by Kitchen Sink)",
-    )
+    @commands.command(name="pingmod",)
     async def _pingmod(self, ctx, *, message):
 
         embed = discord.Embed(
@@ -582,32 +582,51 @@ class settings(commands.Cog):
                     f"Don't expect me to know what happened >:)\n{err}"
                 )
 
-    @commands.command(name="tokenr",description="Enable or Disable token remover.")
+    @commands.command(name="tokenr")
     @commands.has_permissions(administrator=True)
-    async def _tokenr(self,ctx):
+    async def _tokenr(self, ctx):
         disable = False
-        if self.bot.automod[ctx.channel.guild.id]['token_remover']:
-            code = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(5)])
-            original = await ctx.channel.send(f"This action is dangerous. To continue please type `{code}` by itself.")
+        if self.bot.automod[ctx.channel.guild.id]["token_remover"]:
+            code = "".join(
+                [random.choice(string.ascii_letters + string.digits) for n in range(5)]
+            )
+            original = await ctx.channel.send(
+                f"This action is dangerous. To continue please type `{code}` by itself."
+            )
+
             def check(m):
                 return m.author == ctx.author and m.channel == ctx.channel
 
             msg = await self.bot.wait_for("message", check=check)
 
             if msg.content != code:
-                embed = discord.Embed(description=f"This message is in response to [this message]({original.jump_url}). It was never answered.")
-                return await ctx.channel.send(f"❌ Token remover will stay enabled. Failed to type the correct code.",embed=embed)
+                embed = discord.Embed(
+                    description=f"This message is in response to [this message]({original.jump_url}). It was never answered."
+                )
+                return await ctx.channel.send(
+                    f"❌ Token remover will stay enabled. Failed to type the correct code.",
+                    embed=embed,
+                )
             disable = True
-        
+
         async with self.bot.pool.acquire() as conn:
             try:
-                await conn.execute("UPDATE guilds SET token_remover = $1 WHERE id = $2",True if not disable else False,ctx.channel.guild.id)
-                self.bot.automod[ctx.channel.guild.id]['token_remover'] = True if not disable else False
-                await ctx.channel.send(f"""Token remover has been set to: {"Enabled" if not disable else "Disabled"}""")
+                await conn.execute(
+                    "UPDATE guilds SET token_remover = $1 WHERE id = $2",
+                    True if not disable else False,
+                    ctx.channel.guild.id,
+                )
+                self.bot.automod[ctx.channel.guild.id]["token_remover"] = (
+                    True if not disable else False
+                )
+                await ctx.channel.send(
+                    f"""Token remover has been set to: {"Enabled" if not disable else "Disabled"}"""
+                )
             except Exception as err:
                 return await ctx.channel.send(
                     f"Don't expect me to know what happened >:)\n{err}"
                 )
+
 
 def setup(bot):
     bot.add_cog(settings(bot))

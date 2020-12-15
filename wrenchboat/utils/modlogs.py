@@ -201,7 +201,7 @@ class modlog_related:
                     self.time,
                     self.type,
                     self.modlogs,
-                    self.user.guild.id
+                    self.user.guild.id,
                 )
             except Exception as err:
                 print(err)

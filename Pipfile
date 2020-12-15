@@ -32,7 +32,6 @@ googletrans = "*"
 gtrans = "*"
 textblob = "*"
 pytest = "*"
-pylint = "*"
 
 [requires]
 python_version = "3.8"

@@ -54,11 +54,7 @@ class admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(
-        name="nick",
-        usage="@user <nickname>",
-        description="Set a user's nickname. (If nickname is empty the bot will set their name back to normal).",
-    )
+    @commands.command(name="nick",)
     @commands.has_permissions(manage_nicknames=True)
     async def _nick(self, ctx, user: discord.Member, *, new_nick: str = None):
 
@@ -80,11 +76,7 @@ class admin(commands.Cog):
             f"I have nicked {user}. (Their nickname is now `{new_nick or 'their normal name'}`)."
         )
 
-    @commands.command(
-        name="dezalgo",
-        usage="@user",
-        description="Removes and trys to translate any zalgo in a users nickname",
-    )
+    @commands.command(name="dezalgo",)
     @commands.has_permissions(manage_nicknames=True)
     async def _dezalgo(self, ctx, user: discord.Member, *, new_nick: str = None):
 
@@ -102,18 +94,15 @@ class admin(commands.Cog):
             f":ok_hand: I removed any zalgo that I found. Their new nick is `{user.nick}`"
         )
 
-    @commands.command(
-        name="decancer",
-        usage="@user",
-        description="Remove any annoying / spammy characters from a users nickname (or name)",
-    )
+    @commands.command(name="decancer",)
     @commands.has_permissions(manage_nicknames=True)
     async def _decancer(self, ctx, user: discord.Member):
 
         try:
             new_name = unidecode(user.nick) if user.nick else unidecode(user.name)
             await user.edit(
-                nick=new_name[:32], reason=f"[{ctx.author}]: Decancer {user} ({user.id})",
+                nick=new_name[:32],
+                reason=f"[{ctx.author}]: Decancer {user} ({user.id})",
             )
 
         except Exception as err:
@@ -125,11 +114,7 @@ class admin(commands.Cog):
             f"I have cleaned {user}!!!!!! Their new nickname is `{new_name}`"
         )
 
-    @commands.command(
-        name="dehoist",
-        usage="@user",
-        description="Remove an characters in a user's name that may allow them to hoist.",
-    )
+    @commands.command(name="dehoist",)
     @commands.has_permissions(manage_nicknames=True)
     async def _dehoist(self, ctx, user: discord.Member):
 
@@ -150,10 +135,7 @@ class admin(commands.Cog):
         )
 
     @commands.group(
-        name="archive",
-        usage="<amount>",
-        description="Archive a channel to a CSV file.",
-        invoke_without_command=True,
+        name="archive", invoke_without_command=True,
     )
     @commands.has_permissions(manage_messages=True)
     async def _archive(self, ctx, amount: int = None):
@@ -209,11 +191,7 @@ class admin(commands.Cog):
                 f"Don't expect me to know what happened >:)\n{err}"
             )
 
-    @_archive.command(
-        name="from",
-        usage="@user <amount>",
-        description="Archive either all or a certain amount of messages from a user",
-    )
+    @_archive.command(name="from",)
     @commands.has_permissions(manage_messages=True)
     async def _archive_from(self, ctx, user: discord.Member, amount: int = None):
 
@@ -266,11 +244,7 @@ class admin(commands.Cog):
                 f"Don't expect me to know what happened >:)\n{err}"
             )
 
-    @_archive.command(
-        name="in",
-        usage="#channel <amount>",
-        description="Archive either all or a certain amount of messages in a channel",
-    )
+    @_archive.command(name="in",)
     @commands.has_permissions(manage_messages=True)
     async def _archive_in(self, ctx, channel: discord.TextChannel, amount: int = None):
 
@@ -323,11 +297,7 @@ class admin(commands.Cog):
                 f"Don't expect me to know what happened >:)\n{err}"
             )
 
-    @commands.command(
-        name="clearvoice",
-        usage="(voice channel id)",
-        description="Clear a voice channel of all users. :) very useful for voice raids",
-    )
+    @commands.command(name="clearvoice",)
     @commands.has_permissions(manage_channels=True)
     async def _clearvoice(self, ctx, *, voice: discord.VoiceChannel = None):
         try:
@@ -355,11 +325,7 @@ class admin(commands.Cog):
             ),
         )
 
-    @commands.command(
-        name="clearreactions",
-        usage="(message id)",
-        description="Clear a message of a reaction. Could be useful if you want to get a message cleaned.",
-    )  # ,invoke_without_command=True)
+    @commands.command(name="clearreactions",)  # ,invoke_without_command=True)
     @commands.has_permissions(manage_messages=True)
     async def _clearreactions(self, ctx, message: discord.Message):
 
@@ -379,10 +345,7 @@ class admin(commands.Cog):
         )
 
     @commands.group(
-        name="slowmode",
-        usage="(time)",
-        description="Set a channel's slowmode on the fly. *Be like sonic and zoommmmmm*",
-        invoke_without_command=True,
+        name="slowmode", invoke_without_command=True,
     )
     @commands.has_permissions(manage_channels=True)
     async def _slowmode(self, ctx, time):
@@ -403,11 +366,7 @@ class admin(commands.Cog):
             f"Okay? I set {ctx.channel.mention}'s slowmode to {time}.."
         )
 
-    @_slowmode.command(
-        name="remove",
-        usage="None",
-        description="Remove a slowmode from a channel. Of course **on the fly**",
-    )
+    @_slowmode.command(name="remove",)
     @commands.has_permissions(manage_channels=True)
     async def _remove(self, ctx):
 
@@ -420,11 +379,7 @@ class admin(commands.Cog):
 
         return await ctx.channel.send(f"👍")
 
-    @commands.command(
-        name="clearinvites",
-        usage="<amount of uses>",
-        description="Clear your server's invites based on uses.",
-    )
+    @commands.command(name="clearinvites",)
     @commands.has_permissions(administrator=True)
     async def _clearinvites(self, ctx, usess: int):
 
@@ -442,11 +397,7 @@ class admin(commands.Cog):
         list = [f"**{x}**: {invites[x]}" for x in invites]
         return await ctx.channel.send(f"👌\n**Stats**:\n{', '.join(list)}")
 
-    @commands.command(
-        name="post",
-        usage="#channel @role <message>",
-        description="Send a message to a channel that pings a role. Gotta be sneky",
-    )
+    @commands.command(name="post",)
     @commands.has_permissions(administrator=True)
     async def _post(
         self, ctx, channel: discord.TextChannel, role: discord.Role, *, message
@@ -464,10 +415,7 @@ class admin(commands.Cog):
         await ctx.channel.send(":ok_hand:")
 
     @commands.group(
-        name="role",
-        invoke_without_command=True,
-        description="Manage your server's roles with my many commands :)",
-        aliases=["roles"],
+        name="role", invoke_without_command=True, aliases=["roles"],
     )
     @commands.has_permissions(manage_roles=True)
     async def _role(self, ctx):
@@ -487,11 +435,7 @@ class admin(commands.Cog):
         paginator = pagination.BotEmbedPaginator(ctx, pages)
         return await paginator.run()
 
-    @_role.command(
-        name="add",
-        usage="@user (role)",
-        description="Add a role to a user on the fly. If the role you are trying to add is above you, it wont respond.",
-    )
+    @_role.command(name="add",)
     @commands.has_permissions(manage_roles=True)
     async def _add(self, ctx, user: discord.Member, *, role: discord.Role):
 
@@ -517,11 +461,7 @@ class admin(commands.Cog):
             ),
         )
 
-    @_role.command(
-        name="remove",
-        usage="@user (role)",
-        description="Remove a role from a user on the fly. If the role you are trying to add is above you, it wont respond.",
-    )
+    @_role.command(name="remove",)
     @commands.has_permissions(manage_roles=True)
     async def _role_remove(self, ctx, user: discord.Member, *, role: discord.Role):
 
@@ -547,11 +487,7 @@ class admin(commands.Cog):
             ),
         )
 
-    @_role.command(
-        name="all",
-        usage="@role",
-        description="Add a role to all users in your server. *May take some time.*",
-    )
+    @_role.command(name="all",)
     @commands.has_permissions(administrator=True)
     async def _all(self, ctx, role: discord.Role):
 
@@ -572,11 +508,7 @@ class admin(commands.Cog):
             ),
         )
 
-    @_role.command(
-        name="nuke",
-        usage="@role",
-        description="Remove a role from everyone **WITH** the role.",
-    )
+    @_role.command(name="nuke",)
     @commands.has_permissions(administrator=True)
     async def _nuke(self, ctx, role: discord.Role):
 
@@ -597,11 +529,7 @@ class admin(commands.Cog):
             ),
         )
 
-    @_role.command(
-        name="create",
-        usage="(name)",
-        description="Create a role on your server, great for lazy people",
-    )
+    @_role.command(name="create",)
     @commands.has_permissions(administrator=True)
     async def _create(self, ctx, *, name: str):
         if len(name) > 30:
@@ -620,11 +548,7 @@ class admin(commands.Cog):
 
         await ctx.channel.send(":ok_hand:")
 
-    @_role.command(
-        name="delete",
-        usage="@role",
-        description="Swiftly delete a role from your server!!!!!",
-    )
+    @_role.command(name="delete",)
     @commands.has_permissions(administrator=True)
     async def _delete(self, ctx, *, role: discord.Role):
 
@@ -637,7 +561,7 @@ class admin(commands.Cog):
 
         await ctx.channel.send(":ok_hand:")
 
-    @_role.command(name="id", usage="@role", description="Get the id of a role")
+    @_role.command(name="id")
     async def _id(self, ctx, *, role: discord.Role):
 
         try:
@@ -653,7 +577,7 @@ class admin(commands.Cog):
                 f"Don't expect me to know what happened >:)\n{err}"
             )
 
-    @_role.command(name="color", usage="@role", description="Get the color of a role")
+    @_role.command(name="color")
     async def _color(self, ctx, *, role):
 
         try:
@@ -669,10 +593,7 @@ class admin(commands.Cog):
             )
 
     @_role.command(
-        name="memberids",
-        usage="@role",
-        description="Get all member's ids who are in a role.",
-        aliases=["roleids"],
+        name="memberids", aliases=["roleids"],
     )
     @commands.has_permissions(administrator=True)
     async def _memberids(self, ctx, *, role: discord.Role):
@@ -693,19 +614,13 @@ class admin(commands.Cog):
         return await paginator.run()
 
     @commands.group(
-        name="channel",
-        description="Manage your server's channels with cool :sunglasses: options",
-        invoke_without_command=True,
+        name="channel", invoke_without_command=True,
     )
     @commands.has_permissions(manage_channels=True)
     async def _channel(self, ctx):
         return
 
-    @_channel.command(
-        name="lock",
-        usage="<channel>",
-        description="Lock a channel so users can't speak in it.",
-    )
+    @_channel.command(name="lock",)
     @commands.has_permissions(manage_channels=True)
     async def _lock(self, ctx, *, channel: discord.TextChannel = None):
 
@@ -728,11 +643,7 @@ class admin(commands.Cog):
 
         await ctx.channel.send("🔒 channel locked!")
 
-    @_channel.command(
-        name="unlock",
-        usage="<channel>",
-        description="These will revert changes from lock. Make sure that the role has send messages otherwise this wont change anything",
-    )
+    @_channel.command(name="unlock",)
     @commands.has_permissions(manage_channels=True)
     async def _unlock(self, ctx, *, channel: discord.TextChannel = None):
 
@@ -755,11 +666,7 @@ class admin(commands.Cog):
 
         await ctx.channel.send("🔓 channel unlocked!")
 
-    @_channel.command(
-        name="voicelock",
-        usage="<channel>",
-        description="Lock a channel so users can't speak in it.",
-    )
+    @_channel.command(name="voicelock",)
     @commands.has_permissions(manage_channels=True)
     async def _voicelock(self, ctx, *, channel: discord.VoiceChannel = None):
 
@@ -782,11 +689,7 @@ class admin(commands.Cog):
 
         await ctx.channel.send("🔈🔒 channel locked!")
 
-    @_channel.command(
-        name="voiceunlock",
-        usage="<channel>",
-        description="Allow users back into a previously locked voice channel.",
-    )
+    @_channel.command(name="voiceunlock",)
     @commands.has_permissions(manage_channels=True)
     async def _voiceunlock(self, ctx, *, channel: discord.VoiceChannel = None):
 
@@ -809,11 +712,7 @@ class admin(commands.Cog):
 
         await ctx.channel.send("🔊🔓 channel unlocked!")
 
-    @_channel.command(
-        name="hide",
-        usage="<channel>",
-        description="Hide a channel from `@everyone`'s peeping eyes :eyes:",
-    )
+    @_channel.command(name="hide",)
     @commands.has_permissions(manage_channels=True)
     async def _hide(self, ctx, *, channel: discord.TextChannel = None):
 
@@ -838,11 +737,7 @@ class admin(commands.Cog):
             "👀 channel now hidden! *If the user was viewing the channel while you ran the command they can still see it*"
         )
 
-    @_channel.command(
-        name="unhide",
-        usage="<channel>",
-        description="Give `@everyone` permission to see the channel again like a good owner",
-    )
+    @_channel.command(name="unhide",)
     @commands.has_permissions(manage_channels=True)
     async def _unhide(self, ctx, *, channel: discord.TextChannel = None):
 
@@ -865,11 +760,7 @@ class admin(commands.Cog):
 
         await ctx.channel.send("👀 channel now visible!")
 
-    @_channel.command(
-        name="voicehide",
-        usage="<channel>",
-        description="Hide a channel from `@everyone`'s peeping eyes :eyes: **(Voice Edition)**",
-    )
+    @_channel.command(name="voicehide",)
     @commands.has_permissions(manage_channels=True)
     async def _voicehide(self, ctx, *, channel: discord.VoiceChannel = None):
 
@@ -894,11 +785,7 @@ class admin(commands.Cog):
             "👀 channel now hidden! *If the user was in the channel while it was being hidden they can stil see it.*"
         )
 
-    @_channel.command(
-        name="voiceunhide",
-        usage="<channel>",
-        description="Give `@everyone` permission to see the channel again like a good owner **(Voice Edition)**",
-    )
+    @_channel.command(name="voiceunhide",)
     @commands.has_permissions(manage_channels=True)
     async def _voiceunhide(self, ctx, *, channel: discord.VoiceChannel):
 
@@ -921,15 +808,11 @@ class admin(commands.Cog):
 
         await ctx.channel.send("👀 channel now visible!")
 
-    @commands.group(
-        name="noroles", description="View my commands for more info you cutie <3"
-    )
+    @commands.group(name="noroles",)
     async def _noroles(self, ctx):
         return
 
-    @_noroles.command(
-        name="show", description="Shows all users without a role in your server"
-    )
+    @_noroles.command(name="show",)
     @commands.has_permissions(manage_roles=True)
     async def _noroles_show(self, ctx):
 
@@ -952,9 +835,7 @@ class admin(commands.Cog):
         paginator = pagination.BotEmbedPaginator(ctx, pages)
         return await paginator.run()
 
-    @_noroles.command(
-        name="prune", description="Removes all users from your server with no role."
-    )
+    @_noroles.command(name="prune",)
     @commands.has_permissions(manage_roles=True)
     async def _noroles_prune(self, ctx):
 
@@ -975,7 +856,7 @@ class admin(commands.Cog):
             f":ok_hand: {len(list)} users have been kicked!\n**Users kicked:**\n{', '.join(f'{x}' for x in list)}"
         )
 
-    @commands.command(name="config", description="Check your server's config.")
+    @commands.command(name="config")
     @commands.has_permissions(manage_guild=True)
     async def _config(self, ctx):
         async with self.bot.pool.acquire() as conn:
@@ -1025,11 +906,7 @@ class admin(commands.Cog):
                 )
             )
 
-    @commands.command(
-        name="archivem",
-        usage="<#channel>",
-        description="Archive a channel and move it to your server's archive category",
-    )
+    @commands.command(name="archivem",)
     @commands.has_permissions(manage_channels=True)
     async def _archivem(
         self,
@@ -1039,17 +916,22 @@ class admin(commands.Cog):
         reason=None,
     ):
         async with self.bot.pool.acquire() as conn:
-            guild = await conn.fetchrow("SELECT * FROM guilds WHERE id = $1", ctx.channel.guild.id)
-            archives = await conn.fetchrow("SELECT * FROM archived_channels WHERE channel = $1", channel.id)
+            guild = await conn.fetchrow(
+                "SELECT * FROM guilds WHERE id = $1", ctx.channel.guild.id
+            )
+            archives = await conn.fetchrow(
+                "SELECT * FROM archived_channels WHERE channel = $1", channel.id
+            )
 
             if archives:
-                return await ctx.channel.send("Stop 🛑 That channel is already archived!")
+                return await ctx.channel.send(
+                    "Stop 🛑 That channel is already archived!"
+                )
 
             if not guild["archive_category"]:
                 return await ctx.channel.send(
                     f"On no! Where do I send the channel to? Run `{ctx.prefix}archivecategory <category id>` so I know where to send it!!!"
                 )
-            
 
             try:
                 await conn.execute(
@@ -1076,24 +958,43 @@ class admin(commands.Cog):
                 )
             await ctx.channel.send(f"Ok I have archived {channel.mention}!!!!!!")
 
-    @commands.command(name="returnc",usage="<#channel>",description="Return a previously archived channel to its original posistion. :warning: If the category is was in was deleted the channel will will be put in not category.")
+    @commands.command(name="returnc")
     @commands.has_permissions(manage_channels=True)
-    async def _returnc(self,ctx,channel: typing.Union[discord.TextChannel, discord.VoiceChannel],*,reason=None,):    
+    async def _returnc(
+        self,
+        ctx,
+        channel: typing.Union[discord.TextChannel, discord.VoiceChannel],
+        *,
+        reason=None,
+    ):
         async with self.bot.pool.acquire() as conn:
-            archived_channel = await conn.fetchrow("SELECT * FROM archived_channels WHERE channel = $1",channel.id)
+            archived_channel = await conn.fetchrow(
+                "SELECT * FROM archived_channels WHERE channel = $1", channel.id
+            )
 
             if not archived_channel:
-                return await ctx.channel.send("Stop 🛑 That channel is **not** archived!! What are you thinking????")
-            
+                return await ctx.channel.send(
+                    "Stop 🛑 That channel is **not** archived!! What are you thinking????"
+                )
+
             try:
-                await channel.edit(category=ctx.guild.get_channel(archived_channel['category']),position=archived_channel['position'])
-                await conn.execute("DELETE FROM archived_channels WHERE id = $1",archived_channel['id'])
+                await channel.edit(
+                    category=ctx.guild.get_channel(archived_channel["category"]),
+                    position=archived_channel["position"],
+                )
+                await conn.execute(
+                    "DELETE FROM archived_channels WHERE id = $1",
+                    archived_channel["id"],
+                )
             except Exception as err:
                 return await ctx.channel.send(
                     f"Don't expect me to know what happened >:)\n{err}"
                 )
 
-            await ctx.channel.send(f"{channel.mention} has been returned to its rightful place!")
+            await ctx.channel.send(
+                f"{channel.mention} has been returned to its rightful place!"
+            )
+
 
 def setup(bot):
     bot.add_cog(admin(bot))

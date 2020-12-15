@@ -32,7 +32,20 @@ class HelpCommand(commands.MinimalHelpCommand):
         ctx = self.context
         prefix = ctx.prefix  # config.prefix
 
-        str = "\n".join(x for x in ctx.bot.cogs if x not in ["Jishaku", "Help", "AutoModeration", "Error", "highlighter", "listeners", "_purge"])
+        str = "\n".join(
+            x
+            for x in ctx.bot.cogs
+            if x
+            not in [
+                "Jishaku",
+                "Help",
+                "AutoModeration",
+                "Error",
+                "highlighter",
+                "listeners",
+                "_purge",
+            ]
+        )
         await ctx.send(
             f"{ctx.bot.description}\n\n**Categories**:\n{str}\n\nType `{prefix}help command` for more info on a command.\nYou can also type `{prefix}help category` for more info on a category.\n*Ps: the really good avatar was made by some nerd A5rocks#9289 ~~also a simp~~*"
         )
